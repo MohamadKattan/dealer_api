@@ -8,11 +8,11 @@ const userRouter = Router();
 
 const keyUserRouter = {
     signUp: "/api/createUser",
-    logIn: "/api/login"
+    logIn: "/api/logIn"
 };
 
 userRouter.post(keyUserRouter.signUp, checkSchema(userValidator.createUserValidatorSchema), usersController.signupUser);
 
-userRouter.post(keyUserRouter.logIn, checkSchema(userValidator.createUserValidatorSchema), usersController.logInUser);
+userRouter.post(keyUserRouter.logIn, checkSchema(userValidator.loginValidatorSchema), usersController.logInUser);
 
 export default userRouter;

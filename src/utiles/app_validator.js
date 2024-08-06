@@ -6,7 +6,6 @@ const appValidatorQuery = (reqQuery) => {
 }
 
 
-
 const createUserValidatorSchema = {
 
     userName: {
@@ -74,31 +73,13 @@ const createUserValidatorSchema = {
 }
 
 const loginValidatorSchema = {
-    email: {
-        isEmail: true,
+    userName: {
+        isString: true,
         notEmpty: true,
-        normalizeEmail: true,
-        custom: {
-            options: (value, { req }) => {
-                const domain = value.split('@')[1];
-                if (domain !==
-                    'gmail.com' &&
-                    domain !== 'yahoo.com' &&
-                    domain !== 'hotmail.com'
-                ) {
-                    throw new Error('Invalid email domain');
-                }
-                // const existingUser = User.findOne({ email: value });
-                // if (existingUser) {
-                //     throw new Error('Email address already in use');
-                // }
-                return true;
-            },
-        },
         escape: true,
-        errorMessage: 'Invalid email',
+        errorMessage: 'Invalid user Name',
     },
-    password: {
+    passWord: {
         notEmpty: true,
         isLength: {
             options: { min: 8 },

@@ -1,11 +1,19 @@
 import mysql from 'mysql';
 
-const pool = mysql.createPool({
-    connectionLimit: 10,
+const options = {
     host: process.env.HOST_DB,
+    port: 3306,
     user: process.env.USER_DB,
     password: process.env.PASSWORD_DB,
-    database: process.env.NAME_DB,
+    database: process.env.NAME_DB
+}
+
+const pool = mysql.createPool({
+    connectionLimit: 10,
+    host: options.host,
+    user: options.user,
+    password: options.password,
+    database: options.database,
 });
 
 // show or get
@@ -257,7 +265,24 @@ const modefiyAnTable = async (req, res) => {
 }
 
 // get data from db
-const getdataFromAnTable = () => { }
+const getData = async (res, sql, val) => {
+    return new Promise((resolve, reject) => {
+        pool.query(sql, val, function (error, results, fields) {
+            if (error) {
+                console.error('Error to get data:', error);
+                return reject({ error: error });
+            }
+            if (results.length <= 0) {
+                resolve({ error: 'No found user match with data you instert check your info and try again' });
+            }
+            resolve(results);
+        });
+    }).catch(error => {
+        console.error('Unhandled Promise Rejection:', error);
+        return res.status(400).send({ error: error });
+    });;
+
+}
 
 // insert  data into db 
 const insertNewData = async (req, res, tableName, column, values) => {
@@ -282,5 +307,6 @@ const modefiyAnRow = () => { }
 
 const deleteAnRaw = () => { }
 
-const my_db = { pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData };
+const my_db = { options, pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, getData };
+
 export default my_db;

@@ -2,7 +2,7 @@ import express from 'express';
 import 'dotenv/config';
 import morgan from 'morgan';
 import session from 'express-session';
-// import MySQLStore from 'express-mysql-session';
+import MySQLStore from 'express-mysql-session';
 import my_db from './src/my_sql/my_db.js';
 import cluster from 'cluster';
 import os from 'os';
@@ -11,7 +11,9 @@ import mainRouter from './src/routering/main_router.js';
 
 const PORT = process.env.port || process.env.MY_PORT;
 const app = express();
-// const sessionStore = new MySQLStore(my_db.pool);
+// const sessionStore = new MySQLStore(my_db?.options);
+// const sessionStore = new MySQLStore(my_db?.options, my_db?.pool);
+
 const sessionOption = {
     secret: process.env.SESSION_SECRET,
     // store: sessionStore,
@@ -29,7 +31,7 @@ if (app.get('env') === 'production') {
 app.use(morgan('dev'));
 app.use('/', express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(session(sessionOption))
+app.use(session(sessionOption));
 app.use(mainRouter);
 app.use((err, req, res, next) => {
     console.error(err.stack);
