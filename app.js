@@ -3,21 +3,28 @@ import 'dotenv/config';
 import morgan from 'morgan';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
-import my_db from './src/my_sql/my_db.js';
 import cluster from 'cluster';
 import os from 'os';
-const numCPUs = os.cpus().length;
 import mainRouter from './src/routering/main_router.js';
 
+const numCPUs = os.cpus().length;
 const PORT = process.env.port || process.env.MY_PORT;
 const app = express();
-// const sessionStore = new MySQLStore(my_db?.options);
-// const sessionStore = new MySQLStore(my_db?.options, my_db?.pool);
+
+const sessionStoreOptions = {
+    host: process.env.HOST_DB,
+    port: 3306,
+    user: process.env.USER_DB,
+    password: process.env.PASSWORD_DB,
+    database: process.env.NAME_DB
+}
+
+const sessionStore = new (MySQLStore(session))(sessionStoreOptions);
 
 const sessionOption = {
     secret: process.env.SESSION_SECRET,
-    // store: sessionStore,
     name: process.env.SESSION_NAME,
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: { path: '/', httpOnly: true, secure: false, maxAge: 60000 * 60 }
@@ -38,14 +45,6 @@ app.use((err, req, res, next) => {
     res.status(500).send('Something went wrong!');
 });
 
-// sessionStore.onReady().then(() => {
-
-//     console.log('MySQLStore ready');
-// }).catch(error => {
-
-//     console.error(`Error  MySQLStore ::  ${error}`);
-// });
-
 if (cluster.isPrimary) {
     console.log(`Master ${process.pid} is running`);
 
@@ -63,5 +62,3 @@ if (cluster.isPrimary) {
         console.log(`Worker ${process.pid} started server on port ${PORT}`);
     });
 }
-
-// export default app;

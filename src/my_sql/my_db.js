@@ -1,44 +1,34 @@
 import mysql from 'mysql';
 
-const options = {
-    host: process.env.HOST_DB,
-    port: 3306,
-    user: process.env.USER_DB,
-    password: process.env.PASSWORD_DB,
-    database: process.env.NAME_DB
-}
-
 const pool = mysql.createPool({
     connectionLimit: 10,
-    host: options.host,
-    user: options.user,
-    password: options.password,
-    database: options.database,
+    host: process.env.HOST_DB,
+    user: process.env.USER_DB,
+    password: process.env.PASSWORD_DB,
+    database: process.env.NAME_DB,
 });
 
 // show or get
-const showAllTable = async (req, res) => {
+const showAllTable = async () => {
     const sql = 'SHOW TABLES';
     const listOfTables = [];
-    pool.query(sql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error showing all tables :', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        if (results.length <= 0) {
-            return await res.status(200).send(`Number of tables is: ${results.length}  No tables exist yet...`).end();
+    return new Promise((resolve, reject) => {
+        pool.query(sql, function (error, results, fields) {
+            if (error) {
+                console.error('Error showing all tables :', error);
+                return reject({ error: error });
+            }
+            if (results.length <= 0) {
+                return resolve({ result: `Number of tables is: ${results.length}  No tables exist yet...` });
+            }
+            for (const ele of results) {
+                listOfTables.push(ele?.Tables_in_dealer);
+            }
+            resolve({ data: `Number of tables is: ${results.length}\n list of tables is : ${listOfTables}` });
+        });
 
-        }
-        for (const ele of results) {
-            listOfTables.push(ele?.Tables_in_dealer);
-            console.log(ele)
-        }
-
-        await res.status(200).send(`Number of tables is: ${results.length}\n list of tables is : ${listOfTables}`).end();
     });
-
 }
-
 
 const showColumns = async (req, res) => {
     const tableName = req.body?.tableName;
@@ -307,6 +297,6 @@ const modefiyAnRow = () => { }
 
 const deleteAnRaw = () => { }
 
-const my_db = { options, pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, getData };
+const my_db = { pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, getData };
 
 export default my_db;

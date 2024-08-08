@@ -29,9 +29,9 @@ const logInUser = async (req, res) => {
         }
         const user = result[0];
         req.session.user = user;
-        console.log('this is req.session ::' + req.session.user?.user_name);
-        console.log('this is sessionID ::' + req.sessionID);
-        res.status(200).send(` ${JSON.stringify(user)}`).end();
+        console.log('login as :' + req.session.user?.user_name);
+        console.log('sessionID :' + req.sessionID);
+        res.status(200).send(` ${JSON.stringify({ data: user, sessionID: req.sessionID })}`).end();
     } else {
         const msg = resultValidat.array()[0]['msg']
         res.status(400).send(`Error create new user ${msg}`).end();
