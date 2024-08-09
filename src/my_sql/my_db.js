@@ -12,48 +12,66 @@ const pool = mysql.createPool({
 const showAllTable = async () => {
     const sql = 'SHOW TABLES';
     const listOfTables = [];
-    return new Promise((resolve, reject) => {
-        pool.query(sql, function (error, results, fields) {
-            if (error) {
-                console.error('Error showing all tables :', error);
-                return reject({ error: error });
-            }
-            if (results.length <= 0) {
-                return resolve({ result: `Number of tables is: ${results.length}  No tables exist yet...` });
-            }
-            for (const ele of results) {
-                listOfTables.push(ele?.Tables_in_dealer);
-            }
-            resolve({ data: `Number of tables is: ${results.length}\n list of tables is : ${listOfTables}` });
+    try {
+        const result = await new Promise((resolve, reject) => {
+            pool.query(sql, (error, results) => {
+                if (error) {
+                    console.error('Error showing all tables:', error);
+                    return reject({ error: error.message }); // Return error message
+                }
+                if (results.length <= 0) {
+                    return resolve({ msg: 'No tables exist yet...', data: [] });
+                }
+                // Collect table names
+                for (const ele of results) {
+                    listOfTables.push(ele?.Tables_in_dealer);
+                }
+                resolve({ msg: `Number of tables: ${results.length}}`, data: listOfTables });
+            });
         });
 
-    });
-}
-
-const showColumns = async (req, res) => {
-    const tableName = req.body?.tableName;
-    let listOfColumns = '';
-    if (!tableName) {
-        return await res.status(400).send('Error: tableName is null !!').end();
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in showAllTable:', error);
+        return { error: error.message }; // Return error message
     }
-    pool.escapeId(tableName);
-    const sql = `SHOw COLUMNS FROM ${tableName}`;
+};
 
-    pool.query(sql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error  :', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        if (results.length <= 0) {
-            return await res.status(200).send(`Number of columns is: ${results.length}  No columns exist yet...`).end();
+const showColumns = async (table) => {
+    const tableName = table;
+    let listOfColumns = [];
+    try {
+        const result = await new Promise((resolve, reject) => {
 
-        }
-        for (const ele of results) {
-            listOfColumns += `name: ${ele?.Field}, type : ${ele?.Type}, null : ${ele?.Null}\n==============\n`;
-        }
+            if (!tableName) {
+                return reject({ error: 'table name is not defined' });
+            }
+            pool.escapeId(tableName);
+            const sql = `SHOw COLUMNS FROM ${tableName}`;
 
-        await res.status(200).send(`${listOfColumns}`).end();
-    });
+            pool.query(sql, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error  :', error?.message);
+                    return reject({ error: error?.message });
+                }
+
+                if (results.length <= 0) {
+                    return resolve({ msg: `No columns exist yet...`, data: [] });
+
+                }
+                for (const ele of results) {
+                    listOfColumns.push(`name: ${ele?.Field}, type : ${ele?.Type}, null : ${ele?.Null}`);
+                }
+
+                resolve({ msg: "ok", data: listOfColumns });
+            });
+
+        })
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in showColumns', error);
+        return { error: error.message };
+    }
 }
 
 // create

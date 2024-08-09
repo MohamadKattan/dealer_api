@@ -13,33 +13,55 @@ const keyDBRouter = {
     dropColumn: "/api/dropColumn",
     alterColumn: "/api/alterColumn"
 }
+const isAdmin = 'admin';
 
-//get
+// show 
 dbRouter.get(keyDBRouter?.showTables, async (req, res) => {
     try {
         const per = req.session?.user?.per;
         if (!per) {
-            return res.status(200).send({ status: "ok", msg: "logIn is required" });
+            return res.status(401).send({ status: "fail", msg: "Login is required" });
         }
-        if (per !== 'admin') {
-            return res.status(200).send({ status: "ok", msg: 'You do not have access' });
+        if (per !== isAdmin) {
+            return res.status(403).send({ status: "fail", msg: "You do not have access" });
         }
         const result = await my_db?.showAllTable(req, res);
         if (result?.error) {
-            return res.status(404).send(`${result?.error}`).end();
+            return res.status(500).send({ status: "error", msg: result?.error }).end();
         }
-        res.status(200).send(result?.data).end();
+        return res.status(200).send({ status: "success", msg: result?.msg, data: result?.data }).end();
     } catch (error) {
-        console.error(`Error in showTables route: ${error}`);
-        res.status(500).send('Internal Server Error').end();
+        console.error(`Error in showTables route: ${error.message}`);
+        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
     }
 });
 
-// post 
+dbRouter.post(keyDBRouter?.showColumns, async (req, res) => {
+    try {
+        const per = req.session?.user?.per;
+        const tableName = req.body?.tableName;
+        console.log(per);
+        if (!per) {
+            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+        }
+        if (per !== isAdmin) {
+            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+        }
+        const result = await my_db?.showColumns(tableName);
+        if (result?.error) {
+            return res.status(500).send({ status: "error", msg: result?.error }).end();
+        }
+
+        return res.status(200).send({ status: "success", msg: result?.msg, data: result?.data }).end();
+
+    } catch (error) {
+        console.error(`Error in showColumns route: ${error.message}`);
+        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+    }
+});
+
+// create
 dbRouter.post(keyDBRouter?.createTable, my_db?.createNewTable);
-
-
-dbRouter.post(keyDBRouter?.showColumns, my_db?.showColumns);
 
 
 //del
