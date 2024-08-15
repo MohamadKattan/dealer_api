@@ -66,7 +66,7 @@ const showColumns = async (table) => {
                 resolve({ msg: "ok", data: listOfColumns });
             });
 
-        })
+        });
         return result;
     } catch (error) {
         console.error('Unexpected error in showColumns', error);
@@ -75,240 +75,286 @@ const showColumns = async (table) => {
 }
 
 // create
-const createNewTable = async (req, res) => {
-    const tableName = req.body?.tableName;
-    const columns = req.body?.columns;
+const createNewTable = async (tableName, columns) => {
     let sqlColumns = '';
     let index = 0;
 
-    if (!tableName || !columns || columns.length <= 0) {
-        return res.status(400).send('Error: can not create new table tableName or Columns is null !!').end();
+    try {
+        const result = await new Promise((resolve, reject) => {
+
+            if (!tableName || !columns || columns.length <= 0) {
+                return reject({ error: 'can not create new table tableName or Columns is null !!' });
+            }
+            pool.escapeId(tableName);
+
+            for (const element of columns) {
+
+                if (!element?.name || !element?.type) {
+                    return res.status(400).send('Error: column name or type is null !!').end();
+                }
+                index++
+                sqlColumns += `${pool.escapeId(`${element?.name}`)} ${element?.type}`;
+
+                if (element?.notNull) {
+                    sqlColumns += ' NOT NULL'
+                }
+
+                if (element?.default) {
+                    sqlColumns += ` DEFAULT ${pool.escape(element?.default)}`;
+                }
+
+                if (element?.autoIncrement) {
+                    sqlColumns += ' AUTO_INCREMENT'
+                }
+
+                if (element?.primaryKey) {
+                    sqlColumns += ' PRIMARY KEY';
+                }
+
+                if (element?.foreignKey) {
+                    sqlColumns += ' FOREIGN KEY';
+                }
+                if (index !== columns.length) {
+                    sqlColumns += ', ';
+                }
+
+            }
+
+            const newsql = `CREATE TABLE ${tableName}(${sqlColumns})`;
+            pool.query(newsql, function (error, results, fields) {
+                if (error) {
+                    console.error('Error creating table:', error);
+                    return reject({ error: error?.message });
+                }
+                resolve({ msg: 'Table has been create' });
+            });
+        });
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in create new table', error);
+        return { error: error?.message ?? error };
+
     }
-    pool.escapeId(tableName);
-    for (const element of columns) {
-
-        if (!element?.name || !element?.type) {
-            return res.status(400).send('Error: column name or type is null !!').end();
-        }
-        index++
-        sqlColumns += `${pool.escapeId(`${element?.name}`)} ${element?.type}`;
-
-        if (element?.notNull) {
-            sqlColumns += ' NOT NULL'
-        }
-
-        if (element?.default) {
-            sqlColumns += ` DEFAULT ${pool.escape(element?.default)}`;
-        }
-
-        if (element?.autoIncrement) {
-            sqlColumns += ' AUTO_INCREMENT'
-        }
-
-        if (element?.primaryKey) {
-            sqlColumns += ' PRIMARY KEY';
-        }
-
-        if (element?.foreignKey) {
-            sqlColumns += ' FOREIGN KEY';
-        }
-        if (index !== columns.length) {
-            sqlColumns += ', ';
-        }
-
-    }
-    const newsql = `CREATE TABLE ${tableName}(${sqlColumns})`;
-    pool.query(newsql, function (error, results, fields) {
-        if (error) {
-            console.error('Error creating table:', error);
-            return res.status(401).send(`${error}`).end();
-        }
-        res.status(200).send(`Table has been create`).end();
-    });
 }
 
 // del
-const dropAnTable = async (req, res) => {
-    const tableName = req.body?.tableName;
-    if (!tableName) {
-        return await res.status(400).send('Error : table name').end();
-    }
-    pool.escapeId(tableName);
-    const sql = `DROP TABLE ${tableName}`;
-    pool.query(sql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error drop an tables :', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        await res.status(200).send('Table has been Droped').end();
-    });
+const dropAnTable = async (tableName) => {
+    try {
+        const result = await new Promise((resolve, reject) => {
+            if (!tableName) {
+                return reject({ error: 'table name is null ' });
+            }
+            pool.escapeId(tableName);
+            const sql = `DROP TABLE ${tableName}`;
+            pool.query(sql, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error drop an tables :', error);
+                    return reject({ error: error?.message ?? error });
+                }
+                resolve({ msg: 'Table has been Droped' });
+            });
 
+        });
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in delete table', error);
+        return { error: error?.message ?? error };
+
+    }
 }
 
-const truncateTable = async (req, res) => {
-    const tableName = req.body?.tableName;
-    if (!tableName) {
-        return await res.status(400).send('Error : table name').end();
+const truncateTable = async (tableName) => {
+    try {
+        const result = await new Promise((resolve, reject) => {
+            if (!tableName) {
+                return reject({ error: 'table name is null' });
+            }
+            pool.escapeId(tableName);
+            const sql = `TRUNCATE TABLE ${tableName}`;
+            pool.query(sql, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error TRUNCATE  tables :', error?.message);
+                    return reject({ error: error?.message });
+                }
+                resolve({ msg: 'All data has been delete' });
+            });
+        });
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in truncet table', error);
+        return { error: error?.message ?? error };
     }
-    pool.escapeId(tableName);
-    const sql = `TRUNCATE TABLE ${tableName}`;
-    pool.query(sql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error TRUNCATE  tables :', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        await res.status(200).send('All data has been delete').end();
-    });
-
 }
 
-const deleteAnColumn = async (req, res) => {
-    const tableName = req.body?.tableName;
-    const oneColumn = req.body?.oneColumn;
-    if (!tableName || !oneColumn || !oneColumn?.name) {
-        return await res.status(400).send('Error: can not drop column  tableName or Column is null !!').end();
+const deleteAnColumn = async (tableName, oneColumn) => {
+    try {
+        const result = await new Promise((resolve, reject) => {
+
+            if (!tableName || !oneColumn || !oneColumn?.name) {
+                return reject({ error: 'tableName or Column is null !!' });
+            }
+
+            pool.escapeId(tableName);
+            pool.escapeId(oneColumn?.name);
+            const newsql = `ALTER TABLE ${tableName} DROP COLUMN ${oneColumn?.name};`;
+            pool.query(newsql, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error DROP COLUMN from a table:', error);
+                    return reject({ error: error?.message ?? error });
+                }
+                resolve({ msg: 'Column has been delete' });
+            });
+
+        })
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in truncet table', error);
+        return { error: error?.message ?? error };
     }
-
-    pool.escapeId(tableName);
-    pool.escapeId(oneColumn?.name);
-
-    const newsql = `ALTER TABLE ${tableName} DROP COLUMN ${oneColumn?.name};`;
-    pool.query(newsql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error DROP COLUMN from a table:', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        await res.status(200).send(`Column has been delete`).end();
-    });
 }
 
 // modefiy
-const modefiyAnColumn = async (req, res) => {
-    const tableName = req.body?.tableName;
-    const oneColumn = req.body?.oneColumn;
+const modefiyAnColumn = async (tableName, oneColumn) => {
     let sqlColumn = '';
+    try {
+        const result = await new Promise((resolve, reject) => {
+            if (!tableName || !oneColumn || !oneColumn?.name || !oneColumn?.type) {
+                return reject({ error: 'Column table name,column name or column type is null !!' });
+            }
+            pool.escapeId(tableName);
+            pool.escapeId(oneColumn?.name);
+            sqlColumn += ` ${oneColumn?.name} ${oneColumn?.type}`;
 
-    if (!tableName || !oneColumn || !oneColumn?.name || !oneColumn?.type) {
-        return await res.status(400).send('Error: column table name,column name or column type is null !!').end();
+            if (oneColumn?.notNull) {
+                sqlColumn += ' NOT NULL'
+            }
+
+            if (oneColumn?.default) {
+                sqlColumn += ` DEFAULT ${pool.escape(element?.default)}`;
+            }
+
+            if (oneColumn?.autoIncrement) {
+                sqlColumn += ' AUTO_INCREMENT'
+            }
+
+            if (oneColumn?.primaryKey) {
+                sqlColumn += ' PRIMARY KEY';
+            }
+
+            if (oneColumn?.foreignKey) {
+                sqlColumn += ' FOREIGN KEY';
+            }
+
+            const newsql = `ALTER TABLE ${tableName} MODIFY COLUMN ${sqlColumn};`;
+            pool.query(newsql, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error ALTER column ', error);
+                    return reject({ error: error?.message ?? error });
+                }
+                resolve({ error: 'Column has been alter' });
+            });
+        });
+        return result;
+    } catch (error) {
+        console.error('Unexpected error in modefiyAnColumn', error);
+        return { error: error?.message ?? error };
     }
-    pool.escapeId(tableName);
-    pool.escapeId(oneColumn?.name);
-
-    sqlColumn += ` ${oneColumn?.name} ${oneColumn?.type}`;
-
-
-    if (oneColumn?.notNull) {
-        sqlColumn += ' NOT NULL'
-    }
-
-    if (oneColumn?.default) {
-        sqlColumn += ` DEFAULT ${pool.escape(element?.default)}`;
-    }
-
-    if (oneColumn?.autoIncrement) {
-        sqlColumn += ' AUTO_INCREMENT'
-    }
-
-    if (oneColumn?.primaryKey) {
-        sqlColumn += ' PRIMARY KEY';
-    }
-
-    if (oneColumn?.foreignKey) {
-        sqlColumn += ' FOREIGN KEY';
-    }
-
-    const newsql = `ALTER TABLE ${tableName} MODIFY COLUMN ${sqlColumn};`;
-    pool.query(newsql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error ALTER column:', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        await res.status(200).send(`Column has been alter`).end();
-    });
-
 }
 
-const modefiyAnTable = async (req, res) => {
-    const tableName = req.body?.tableName;
-    const oneColumn = req.body?.oneColumn;
+const modefiyAnTable = async (tableName, oneColumn) => {
     let sqlColumns = '';
+    try {
+        const result = await new Promise((resolve, reject) => {
+            if (!tableName || !oneColumn || !oneColumn?.name || !oneColumn?.type) {
+                return reject({ error: ' tableName,Column name or type is null !!' });
+            }
+            pool.escapeId(tableName);
+            pool.escapeId(oneColumn?.name);
+            sqlColumns += ` ${oneColumn?.name} ${oneColumn?.type}`;
+            if (oneColumn?.notNull) {
+                sqlColumns += ' NOT NULL'
+            }
 
+            if (oneColumn?.default) {
+                sqlColumns += ` DEFAULT ${pool.escape(oneColumn?.default)}`;
+            }
 
-    if (!tableName || !oneColumn || !oneColumn?.name || !oneColumn?.type) {
-        return await res.status(400).send('Error: tableName or Column name / type is null !!').end();
+            if (oneColumn?.autoIncrement) {
+                sqlColumns += ' AUTO_INCREMENT'
+            }
+
+            if (oneColumn?.primaryKey) {
+                sqlColumns += ' PRIMARY KEY';
+            }
+
+            if (oneColumn?.foreignKey) {
+                sqlColumns += ' FOREIGN KEY';
+            }
+
+            const newsql = `ALTER TABLE ${tableName} ADD ${sqlColumns};`;
+            pool.query(newsql, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error ALTER table:', error);
+                    return reject({ errro: error?.message ?? error });
+                }
+                resolve({ msg: 'Table has been alter' });
+            });
+        });
+        return result;
+    } catch (error) {
+        console.error('error in modefiyAnTable' + error);
+        return { error: error }
+
     }
-
-    pool.escapeId(tableName);
-    pool.escapeId(oneColumn?.name);
-    sqlColumns += ` ${oneColumn?.name} ${oneColumn?.type}`;
-
-    if (oneColumn?.notNull) {
-        sqlColumns += ' NOT NULL'
-    }
-
-    if (oneColumn?.default) {
-        sqlColumns += ` DEFAULT ${pool.escape(oneColumn?.default)}`;
-    }
-
-    if (oneColumn?.autoIncrement) {
-        sqlColumns += ' AUTO_INCREMENT'
-    }
-
-    if (oneColumn?.primaryKey) {
-        sqlColumns += ' PRIMARY KEY';
-    }
-
-    if (oneColumn?.foreignKey) {
-        sqlColumns += ' FOREIGN KEY';
-    }
-
-    const newsql = `ALTER TABLE ${tableName} ADD ${sqlColumns};`;
-    pool.query(newsql, async function (error, results, fields) {
-        if (error) {
-            console.error('Error ALTER table:', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        await res.status(200).send(`Table has been alter`).end();
-    });
 }
 
 // get data from db
-const getData = async (res, sql, val) => {
-    return new Promise((resolve, reject) => {
-        pool.query(sql, val, function (error, results, fields) {
-            if (error) {
-                console.error('Error to get data:', error);
-                return reject({ error: error });
-            }
-            if (results.length <= 0) {
-                resolve({ error: 'No found user match with data you instert check your info and try again' });
-            }
-            resolve(results);
+const getData = async (sql, val) => {
+    try {
+        const result = await new Promise((resolve, reject) => {
+            pool.query(sql, val, function (error, results, fields) {
+                if (error) {
+                    console.error('Error to get data:', error?.message ?? error);
+                    return reject({ error: error?.message ?? error });
+                }
+                if (results.length <= 0) {
+                    return resolve({ msg: 'No found' });
+                }
+                resolve({ msg: 'ok', data: results });
+            });
         });
-    }).catch(error => {
-        console.error('Unhandled Promise Rejection:', error);
-        return res.status(400).send({ error: error });
-    });;
-
+        return result;
+    } catch (error) {
+        console.error('error in get data from db ' + error);
+        return { error: error };
+    }
 }
 
 // insert  data into db 
-const insertNewData = async (req, res, tableName, column, values) => {
-    if (!tableName) {
-        return await res.status(400).send('can not create new user table name is null');
-    }
-    pool.escapeId(tableName);
-    const placeholders = values.map(() => '(?)').join(',');
-    const sql = `INSERT INTO ${tableName}(${column}) VALUES (${placeholders});`;
-    const flattenedValues = values.flat();
-    pool.query(sql, flattenedValues, async function (error, results, fields) {
-        if (error) {
-            console.error('Error to insert new data :', error);
-            return await res.status(401).send(`${error}`).end();
-        }
-        await res.status(200).send('insert new data is okay').end();
-    });
+const insertNewData = async (tableName, column, values) => {
+    try {
+        const result = await new Promise((resolve, reject) => {
 
+            if (!tableName) {
+                return reject({ error: 'can not create new user table name is null' });
+            }
+            pool.escapeId(tableName);
+            const placeholders = values.map(() => '(?)').join(',');
+            const sql = `INSERT INTO ${tableName}(${column}) VALUES (${placeholders});`;
+            const flattenedValues = values.flat();
+            pool.query(sql, flattenedValues, async function (error, results, fields) {
+                if (error) {
+                    console.error('Error to insert new data :', error);
+                    return reject({ error: error?.message ?? error });
+                }
+                resolve({ msg: 'New data has been sat' });
+            });
+        });
+        return result;
+    } catch (error) {
+        console.error('Un handel error in insert NewData');
+        return ({ error: error });
+    }
 }
 
 const modefiyAnRow = () => { }

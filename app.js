@@ -42,7 +42,7 @@ app.use(session(sessionOption));
 app.use(mainRouter);
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send('Something went wrong!');
+    res.status(500).send({ status: 'error', msg: " Something went wrong! " });
 });
 
 if (cluster.isPrimary) {
