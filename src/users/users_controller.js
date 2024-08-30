@@ -1,6 +1,7 @@
-import { query, body, param, check, checkSchema, validationResult, matchedData } from 'express-validator';
+import { query, body, param, check, checkSchema, validationResult, matchedData, cookie } from 'express-validator';
 import my_db from '../my_sql/my_db.js';
-import { json } from 'express';
+import appSecure from '../utiles/app_secure.js';
+
 
 const isAdmin = process.env.PER;
 
@@ -45,18 +46,23 @@ const logInUser = async (req, res) => {
             const validdata = matchedData(req);
             const sql = `SELECT user_name, user_phone, per, user_id FROM users WHERE user_name = ? AND  pass_word = ?;`;
             const val = [validdata?.userName, validdata?.passWord];
+            const newToken = await appSecure.createToken();
+            if (newToken.error) {
+                return res.status(500).send({ status: "fail", msg: 'error to create new token' }).end();
+            }
             const result = await my_db?.getData(sql, val);
             if (result?.error) {
                 return res.status(500).send({ status: "fail", msg: result?.error }).end();
             }
             if (!result?.data) {
-                return res.status(200).send({ status: "success", msg: 'User no found check your info and try agin' }).end();
+                return res.status(404).send({ status: "fail", msg: 'User no found  or check your info and try agin' }).end();
             }
             const user = result?.data[0];
             req.session.user = user;
             console.log('login as :' + req.session.user?.user_name);
             console.log('sessionID :' + req.sessionID);
-            res.status(200).send(` ${JSON.stringify({ data: user, sessionID: req.sessionID })}`).end();
+            console.log('token :' + req.sessionID);
+            res.status(200).send(` ${JSON.stringify({ data: user,token: newToken })}`).end();
         } else {
             const msg = resultValidat.array()[0]['msg']
             res.status(400).send(`Error create new user ${msg}`).end();

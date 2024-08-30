@@ -8,8 +8,6 @@ mainRouter.use(userRouter);
 mainRouter.use(dbRouter);
 
 mainRouter.get('/', (req, res) => {
-    // console.log('this is req.session ::' + req.session);
-    // console.log('this is sessionID ::' + req.sessionID);
     res.status(200).send('Hello World  :: ' + req.sessionID).end();
 });
 
