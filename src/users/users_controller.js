@@ -46,31 +46,32 @@ const logInUser = async (req, res) => {
             const validdata = matchedData(req);
             const sql = `SELECT user_name, user_phone, per, user_id FROM users WHERE user_name = ? AND  pass_word = ?;`;
             const val = [validdata?.userName, validdata?.passWord];
-            const newToken = await appSecure.createToken();
-            if (newToken.error) {
-                return res.status(500).send({ status: "fail", msg: 'error to create new token' }).end();
-            }
             const result = await my_db?.getData(sql, val);
             if (result?.error) {
-                return res.status(500).send({ status: "fail", msg: result?.error }).end();
+                return res.status(401).send({ status: "fail", msg: result?.error }).end();
             }
             if (!result?.data) {
                 return res.status(404).send({ status: "fail", msg: 'User no found  or check your info and try agin' }).end();
             }
             const user = result?.data[0];
             req.session.user = user;
+            const newToken = await appSecure.createToken(user);
+            if (newToken?.error) {
+                return res.status(401).send({ status: "fail", msg: 'Error to create new token' }).end();
+            }
             console.log('login as :' + req.session.user?.user_name);
             console.log('sessionID :' + req.sessionID);
-            console.log('token :' + req.sessionID);
-            res.status(200).send(` ${JSON.stringify({ data: user,token: newToken })}`).end();
+            console.log('token :' + newToken);
+            res.status(200).send(JSON.stringify({ data: user, token: newToken })).end();
         } else {
             const msg = resultValidat.array()[0]['msg']
-            res.status(400).send(`Error create new user ${msg}`).end();
+            res.status(400).send({ status: "fail", msg: `${msg}` }).end();
+
         }
 
     } catch (error) {
         console.error('Un handel error in login method')
-        res.status(500).send({ status: "fail", msg: ` Un handel error in login ${error}` }).end();
+        res.status(400).send({ status: "fail", msg: `${error}` }).end();
     }
 }
 

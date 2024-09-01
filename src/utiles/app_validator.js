@@ -7,7 +7,6 @@ const appValidatorQuery = (reqQuery) => {
 
 
 const createUserValidatorSchema = {
-
     userName: {
         isString: true,
         notEmpty: true,
