@@ -59,10 +59,15 @@ const logInUser = async (req, res) => {
             if (newToken?.error) {
                 return res.status(401).send({ status: "fail", msg: 'Error to create new token' }).end();
             }
-            console.log('login as :' + req.session.user?.user_name);
-            console.log('sessionID :' + req.sessionID);
-            console.log('token :' + newToken);
-            res.status(200).send(JSON.stringify({ data: user, token: newToken })).end();
+            const data = {
+                user_id: user?.user_id,
+                user_name: user?.user_name,
+                per: user?.per,
+                token: newToken
+            }
+            console.log(` sessionID : ${req.sessionID}, ${data}`);
+
+            res.status(200).send(JSON.stringify({ data: data })).end();
         } else {
             const msg = resultValidat.array()[0]['msg']
             res.status(400).send({ status: "fail", msg: `${msg}` }).end();
