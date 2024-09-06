@@ -1,6 +1,7 @@
 import { query, body, param, check, checkSchema, validationResult, matchedData, cookie } from 'express-validator';
 import my_db from '../my_sql/my_db.js';
 import appSecure from '../utiles/app_secure.js';
+import reusable from '../utiles/reusable_functoins.js';
 
 
 const isAdmin = process.env.PER;
@@ -48,16 +49,16 @@ const logInUser = async (req, res) => {
             const val = [validdata?.userName, validdata?.passWord];
             const result = await my_db?.getData(sql, val);
             if (result?.error) {
-                return res.status(401).send({ status: "fail", msg: result?.error }).end();
+                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kAuthFail, result?.error);
             }
             if (!result?.data) {
-                return res.status(404).send({ status: "fail", msg: 'User no found  or check your info and try agin' }).end();
+                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kNotFound, null);
             }
             const user = result?.data[0];
             req.session.user = user;
             const newToken = await appSecure.createToken(user);
             if (newToken?.error) {
-                return res.status(401).send({ status: "fail", msg: 'Error to create new token' }).end();
+                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kTokenFail, null);
             }
             const data = {
                 user_id: user?.user_id,
@@ -65,18 +66,16 @@ const logInUser = async (req, res) => {
                 per: user?.per,
                 token: newToken
             }
-            console.log(` sessionID : ${req.sessionID}, ${data}`);
+            console.log(` sessionID : ${req.sessionID},\n data:  ${data},\n token ${newToken}`);
+            reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kLogin, null, data);
 
-            res.status(200).send(JSON.stringify({ data: data })).end();
         } else {
             const msg = resultValidat.array()[0]['msg']
-            res.status(400).send({ status: "fail", msg: `${msg}` }).end();
-
+            reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
         }
-
     } catch (error) {
-        console.error('Un handel error in login method')
-        res.status(400).send({ status: "fail", msg: `${error}` }).end();
+        console.error('An unexpected error occurred')
+        reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
     }
 }
 
