@@ -79,6 +79,7 @@ const createNewTable = async (tableName, columns) => {
     let sqlColumns = '';
     let index = 0;
 
+
     try {
         const result = await new Promise((resolve, reject) => {
 
@@ -100,7 +101,8 @@ const createNewTable = async (tableName, columns) => {
                 }
 
                 if (element?.default) {
-                    sqlColumns += ` DEFAULT ${pool.escape(element?.default)}`;
+                    const newdefult = pool.escape(element?.default)
+                    sqlColumns += ` DEFAULT ${newdefult}`;
                 }
 
                 if (element?.autoIncrement) {
@@ -123,8 +125,8 @@ const createNewTable = async (tableName, columns) => {
             const newsql = `CREATE TABLE ${tableName}(${sqlColumns})`;
             pool.query(newsql, function (error, results, fields) {
                 if (error) {
-                    console.error('Error creating table:', error);
-                    return reject({ error: error?.message });
+                    console.error('Error creating table:', error?.sqlMessage);
+                    return reject({ error: error?.sqlMessage });
                 }
                 resolve({ msg: 'Table has been create' });
             });
@@ -132,7 +134,7 @@ const createNewTable = async (tableName, columns) => {
         return result;
     } catch (error) {
         console.error('Unexpected error in create new table', error);
-        return { error: error?.message ?? error };
+        return { error: error };
 
     }
 }

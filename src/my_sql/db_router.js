@@ -1,5 +1,7 @@
 import { Router } from "express";
 import my_db from "./my_db.js";
+import appSecure from "../utiles/app_secure.js";
+import reusable from "../utiles/reusable_functoins.js";
 
 const dbRouter = Router();
 
@@ -16,23 +18,23 @@ const keyDBRouter = {
 const isAdmin = process.env.PER;
 
 // show 
-dbRouter.get(keyDBRouter?.showTables, async (req, res) => {
+dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" });
+            return res.status(401).send(JSON.stringify({ status: "fail", msg: "Login is required" }));
         }
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" });
+            return res.status(403).send(JSON.stringify({ status: "fail", msg: "You do not have access" }));
         }
         const result = await my_db?.showAllTable(req, res);
         if (result?.error) {
-            return res.status(500).send({ status: "error", msg: result?.error }).end();
+            return res.status(400).send(JSON.stringify({ status: "error", msg: result?.error })).end();
         }
-        return res.status(200).send({ status: "success", msg: result?.msg, data: result?.data }).end();
+        return res.status(200).send(JSON.stringify({ status: "success", msg: result?.msg, data: result?.data })).end();
     } catch (error) {
         console.error(`Error in showTables route: ${error.message}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        res.status(500).send(JSON.stringify({ status: "error", msg: "Internal Server Error" })).end();
     }
 });
 
@@ -60,30 +62,27 @@ dbRouter.post(keyDBRouter?.showColumns, async (req, res) => {
 });
 
 // create
-dbRouter.post(keyDBRouter?.createTable, async (req, res) => {
+dbRouter.post(keyDBRouter?.createTable, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         const columns = req.body?.columns
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
 
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
-
         const result = await my_db?.createNewTable(tableName, columns);
-
         if (result?.error) {
-            return res.status(500).send({ status: "error", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
-
-        res.status(200).send({ status: "success", msg: result?.msg }).end();
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.kcreateTable, null);
 
     } catch (error) {
-        console.error(`Error in showColumns route: ${error.message}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        console.error(`Error in create table router: ${error}`);
+        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 

@@ -1,6 +1,4 @@
 import jwt from 'jsonwebtoken';
-import session from 'express-session';
-import MySQLStore from 'express-mysql-session';
 import { checkSchema } from 'express-validator';
 import userValidator from './app_validator.js';
 
@@ -28,34 +26,9 @@ const corsOptions = {
     credentials: true,
 }
 
-
-// session
-const sessionStoreOptions = {
-    host: process.env.HOST_DB,
-    port: 3306,
-    user: process.env.USER_DB,
-    password: process.env.PASSWORD_DB,
-    database: process.env.NAME_DB
-}
-const sessionStore = new (MySQLStore(session))(sessionStoreOptions);
-
-const sessionOption = {
-    secret: process.env.SESSION_SECRET,
-    name: process.env.SESSION_NAME,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        path: '/',
-        httpOnly: true,
-        secure: false,
-        maxAge: 60000 * 60,
-        sameSite: 'None'
-    }
-};
-
 // token
 const secretKey = process.env.TOKEN_SECRET
+
 const createToken = async (data) => {
 
     const newUser = {
@@ -87,7 +60,7 @@ const verifyToken = async (req, res, next) => {
             }
             req.user = decoded;
             next();
-           
+
         });
     } catch (error) {
         console.error(`error at verifyToken :: ${error}`);
@@ -95,6 +68,6 @@ const verifyToken = async (req, res, next) => {
     }
 }
 
-const appSecure = { createToken, verifyToken, sessionOption, corsOptions }
+const appSecure = { createToken, verifyToken, corsOptions }
 
 export default appSecure;

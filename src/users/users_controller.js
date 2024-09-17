@@ -55,7 +55,6 @@ const logInUser = async (req, res) => {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kNotFound, null);
             }
             const user = result?.data[0];
-            req.session.user = user;
             const newToken = await appSecure.createToken(user);
             if (newToken?.error) {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kTokenFail, null);
@@ -66,7 +65,7 @@ const logInUser = async (req, res) => {
                 per: user?.per,
                 token: newToken
             }
-            console.log(` sessionID : ${req.sessionID},\n data:  ${data},\n token ${newToken}`);
+            console.log(`data:  ${data},\n token ${newToken}`);
             reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kLogin, null, data);
 
         } else {

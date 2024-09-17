@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import morgan from 'morgan';
-import session from 'express-session';
 import cluster from 'cluster';
 import os from 'os';
 import mainRouter from './src/routering/main_router.js';
@@ -12,16 +11,10 @@ const numCPUs = os.cpus().length;
 const PORT = process.env.port || process.env.MY_PORT;
 const app = express();
 
-if (app.get('env') === 'production') {
-    app.set('trust proxy', 1)
-    appSecure.sessionOption.cookie.secure = true;
-}
-
 app.use(morgan('dev'));
 app.use('/', express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(appSecure.corsOptions));
-app.use(session(appSecure.sessionOption));
 app.use(mainRouter);
 app.use((err, req, res, next) => {
     console.error(err.stack);
