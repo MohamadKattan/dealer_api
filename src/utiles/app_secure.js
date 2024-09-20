@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { checkSchema } from 'express-validator';
-import userValidator from './app_validator.js';
+import reusable from './reusable_functoins.js';
 
 
 //cors
@@ -52,19 +51,21 @@ const verifyToken = async (req, res, next) => {
         const token = req.headers['authorization'];
         if (!token) {
             console.error('No token provided');
-            return res.status(403).send({ status: "fail", msg: 'No token provided' });
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoTokenP, null);
         }
         jwt.verify(token, secretKey, (err, decoded) => {
             if (err) {
-                return res.status(401).send({ status: "fail", msg: 'Invalid token' });
+                return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kInviledToken, null);
             }
+
             req.user = decoded;
             next();
 
         });
     } catch (error) {
         console.error(`error at verifyToken :: ${error}`);
-        return res.status(500).send({ status: "fail", msg: `Un expexted error ${error}` });
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
+
     }
 }
 

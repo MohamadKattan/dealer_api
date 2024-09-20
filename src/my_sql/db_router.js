@@ -17,47 +17,51 @@ const keyDBRouter = {
 }
 const isAdmin = process.env.PER;
 
-// show 
+// show  
 dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken, async (req, res) => {
     try {
         const per = req?.user?.per;
         if (!per) {
-            return res.status(401).send(JSON.stringify({ status: "fail", msg: "Login is required" }));
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kLoginRequired, null);
+
         }
         if (per !== isAdmin) {
-            return res.status(403).send(JSON.stringify({ status: "fail", msg: "You do not have access" }));
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, null);
         }
         const result = await my_db?.showAllTable(req, res);
         if (result?.error) {
-            return res.status(400).send(JSON.stringify({ status: "error", msg: result?.error })).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL,
+                result?.error?.error ?? 'error sql**');
+
         }
-        return res.status(200).send(JSON.stringify({ status: "success", msg: result?.msg, data: result?.data })).end();
+        return reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, result?.msg, result?.data);
     } catch (error) {
         console.error(`Error in showTables route: ${error.message}`);
-        res.status(500).send(JSON.stringify({ status: "error", msg: "Internal Server Error" })).end();
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 
-dbRouter.post(keyDBRouter?.showColumns, async (req, res) => {
+dbRouter.post(keyDBRouter?.showColumns, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kLoginRequired, null);
+
         }
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, null);
         }
         const result = await my_db?.showColumns(tableName);
         if (result?.error) {
-            return res.status(500).send({ status: "error", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL,
+                result?.error?.error ?? 'error sql**');
         }
-
-        return res.status(200).send({ status: "success", msg: result?.msg, data: result?.data }).end();
+        return reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, result?.msg, result?.data);
 
     } catch (error) {
         console.error(`Error in showColumns route: ${error.message}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 
@@ -87,74 +91,76 @@ dbRouter.post(keyDBRouter?.createTable, appSecure.verifyToken, async (req, res) 
 });
 
 //del
-dbRouter.delete(keyDBRouter?.dropTable, async (req, res) => {
+dbRouter.delete(keyDBRouter?.dropTable, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
 
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
 
         const result = await my_db?.dropAnTable(tableName);
 
         if (result?.error) {
-            return res.status(500).send({ status: "error", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
 
-        res.status(200).send({ status: "success", msg: result?.msg }).end();
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
 
     } catch (error) {
         console.error(`Error in delete table route: ${error?.message ?? error}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 
-dbRouter.delete(keyDBRouter?.truncateTable, async (req, res) => {
+dbRouter.delete(keyDBRouter?.truncateTable, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
 
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
         const result = await my_db?.truncateTable(tableName);
         if (result?.error) {
-            return res.status(500).send({ status: "fail", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
-        res.status(200).send({ status: "success", msg: result?.msg ?? 'ok' });
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
+
     } catch (error) {
         console.error(`Error in delete table route: ${error?.message ?? error}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 
-dbRouter.delete(keyDBRouter?.dropColumn, async (req, res) => {
+dbRouter.delete(keyDBRouter?.dropColumn, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         const oneColumn = req.body?.oneColumn;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
+
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
         const result = await my_db?.deleteAnColumn(tableName, oneColumn);
 
         if (result?.error) {
-            return res.status(500).send({ status: "fail", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
-        res.status(200).send({ status: "success", msg: result?.msg ?? 'ok' });
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
     } catch (error) {
         console.error(`Error in delete Column route: ${error?.message ?? error}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 

@@ -3,6 +3,7 @@ const tK = {
     ttsuccess: 'success',
     kLogin: 'login',
     kcreateTable: 'createTable',
+    ksuccess: 'successSql',
     tterror: 'errors',
     kvalidation: 'validation',
     kAuthFail: 'authFail',
@@ -11,14 +12,17 @@ const tK = {
     kserverError: 'serverError',
     kLoginRequired: 'loginRequired',
     kNoAccess: 'noAccess',
-    kErrorMysQL: 'errorSql'
+    kErrorMysQL: 'errorSql',
+    kInviledToken: 'inviledToken',
+    kNoTokenP: 'noToken'
 };
 
 // Reusable body 
 const resBody = {
     success: {
-        login: { statusCode: 200, status: "success", msg: "Login successful" },
+        login: { statusCode: 200, status: "success", msg: "Login Successful" },
         createTable: { statusCode: 200, status: "success", msg: "Create New Table successful" },
+        successSql: { statusCode: 200, status: "success", msg: "Successful" },
     },
     errors: {
         validation: { statusCode: 400, status: "fail", msg: "Validation failed" },
@@ -29,6 +33,8 @@ const resBody = {
         loginRequired: { statusCode: 401, status: "fail", msg: "Login is required" },
         noAccess: { statusCode: 403, status: "fail", msg: "You do not have access" },
         errorSql: { statusCode: 400, status: "fail", msg: "error in sql" },
+        inviledToken: { statusCode: 401, status: "fail", msg: "Invalid token" },
+        kNoTokenP: { statusCode: 403, status: "fail", msg: "No token provided" }
     }
 };
 

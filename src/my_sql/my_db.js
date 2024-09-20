@@ -60,7 +60,13 @@ const showColumns = async (table) => {
 
                 }
                 for (const ele of results) {
-                    listOfColumns.push(`name: ${ele?.Field}, type : ${ele?.Type}, null : ${ele?.Null}`);
+                    const oneColumn = {
+                        name: ele?.Field,
+                        type: ele?.Type,
+                        null: ele?.Null
+                    }
+                    listOfColumns.push(oneColumn);
+                    // listOfColumns.push(`name: ${ele?.Field}, type : ${ele?.Type}, null : ${ele?.Null}`);
                 }
 
                 resolve({ msg: "ok", data: listOfColumns });
