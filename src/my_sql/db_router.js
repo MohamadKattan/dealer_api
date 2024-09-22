@@ -165,49 +165,51 @@ dbRouter.delete(keyDBRouter?.dropColumn, appSecure.verifyToken, async (req, res)
 });
 
 // put
-dbRouter.put(keyDBRouter?.alterColumn, async (req, res) => {
+dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, async (req, res) => {
 
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         const oneColumn = req.body?.oneColumn;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
+
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
         const result = await my_db?.modefiyAnColumn(tableName, oneColumn);
         if (result?.error) {
-            return res.status(500).send({ status: "fail", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
-        res.status(200).send({ status: "success", msg: result?.msg ?? 'ok' });
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
     } catch (error) {
         console.error(`Error in delete modefiyAnColumn route: ${error?.message ?? error}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 
 });
 
-dbRouter.put(keyDBRouter?.alterTable, async (req, res) => {
+dbRouter.put(keyDBRouter?.alterTable, appSecure.verifyToken, async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
         const tableName = req.body?.tableName;
         const oneColumn = req.body?.oneColumn;
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
+
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
         const result = await my_db?.modefiyAnTable(tableName, oneColumn);
         if (result?.error) {
-            return res.status(500).send({ status: "fail", msg: result?.error }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
-        res.status(200).send({ status: "success", msg: result?.msg ?? 'ok' });
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
     } catch (error) {
         console.error(`Error in delete modefiyAnTable route: ${error?.message ?? error}`);
-        res.status(500).send({ status: "error", msg: "Internal Server Error" }).end();
+        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
     }
 });
 

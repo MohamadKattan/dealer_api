@@ -45,7 +45,7 @@ const logInUser = async (req, res) => {
         const resultValidat = validationResult(req);
         if (resultValidat.isEmpty()) {
             const validdata = matchedData(req);
-            const sql = `SELECT user_name, user_phone, per, user_id FROM users WHERE user_name = ? AND  pass_word = ?;`;
+            const sql = `SELECT user_name, per, user_id FROM users WHERE user_name = ? AND  pass_word = ?;`;
             const val = [validdata?.userName, validdata?.passWord];
             const result = await my_db?.getData(sql, val);
             if (result?.error) {
