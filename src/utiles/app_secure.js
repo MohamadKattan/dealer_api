@@ -64,7 +64,7 @@ const verifyToken = async (req, res, next) => {
         });
     } catch (error) {
         console.error(`error at verifyToken :: ${error}`);
-        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kInviledToken, `error at verifyToken :: ${error}`);
 
     }
 }

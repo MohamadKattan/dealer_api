@@ -122,6 +122,10 @@ const createNewTable = async (tableName, columns) => {
                 if (element?.foreignKey) {
                     sqlColumns += ' FOREIGN KEY';
                 }
+
+                if (element?.unique) {
+                    sqlColumns += ' UNIQUE';
+                }
                 if (index !== columns.length) {
                     sqlColumns += ', ';
                 }
@@ -145,7 +149,26 @@ const createNewTable = async (tableName, columns) => {
     }
 }
 
-// del
+const queryByDev = async (sql) => {
+    try {
+        const result = new Promise((resolve, reject) => {
+            pool.query(sql, function (error, results, fields) {
+                if (error) {
+                    console.error('Error query dev:', error?.sqlMessage);
+                    return reject({ error: error?.sqlMessage });
+                }
+                resolve({ msg: 'okay' });
+            });
+
+        });
+        return result;
+    } catch (error) {
+        console.error(error);
+        return { error: error };
+    }
+}
+
+// del 
 const dropAnTable = async (tableName) => {
     try {
         const result = await new Promise((resolve, reject) => {
@@ -221,7 +244,7 @@ const deleteAnColumn = async (tableName, oneColumn) => {
     }
 }
 
-// modefiy
+// modefiy 
 const modefiyAnColumn = async (tableName, oneColumn) => {
     let sqlColumn = '';
     try {
@@ -253,13 +276,17 @@ const modefiyAnColumn = async (tableName, oneColumn) => {
                 sqlColumn += ' FOREIGN KEY';
             }
 
+            if (oneColumn?.unique) {
+                sqlColumn += ' UNIQUE';
+            }
+
             const newsql = `ALTER TABLE ${tableName} MODIFY COLUMN ${sqlColumn};`;
             pool.query(newsql, async function (error, results, fields) {
                 if (error) {
                     console.error('Error ALTER column ', error);
                     return reject({ error: error?.message ?? error });
                 }
-                resolve({ error: 'Column has been alter' });
+                resolve({ msg: 'Column has been alter' });
             });
         });
         return result;
@@ -297,6 +324,10 @@ const modefiyAnTable = async (tableName, oneColumn) => {
 
             if (oneColumn?.foreignKey) {
                 sqlColumns += ' FOREIGN KEY';
+            }
+
+            if (oneColumn?.unique) {
+                sqlColumns += ' UNIQUE';
             }
 
             const newsql = `ALTER TABLE ${tableName} ADD ${sqlColumns};`;
@@ -352,7 +383,7 @@ const insertNewData = async (tableName, column, values) => {
             const flattenedValues = values.flat();
             pool.query(sql, flattenedValues, async function (error, results, fields) {
                 if (error) {
-                    console.error('Error to insert new data :', error);
+                    console.error('Error to insert new data :', error.message);
                     return reject({ error: error?.message ?? error });
                 }
                 resolve({ msg: 'New data has been sat' });
@@ -365,10 +396,7 @@ const insertNewData = async (tableName, column, values) => {
     }
 }
 
-const modefiyAnRow = () => { }
 
-const deleteAnRaw = () => { }
-
-const my_db = { pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, getData };
+const my_db = { pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, getData, queryByDev };
 
 export default my_db;

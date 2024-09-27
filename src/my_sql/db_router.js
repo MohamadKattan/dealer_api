@@ -6,6 +6,7 @@ import reusable from "../utiles/reusable_functoins.js";
 const dbRouter = Router();
 
 const keyDBRouter = {
+    genarlSql: "/api/genarl",
     showTables: "/api/showTables",
     showColumns: "/api/showColumns",
     createTable: "/api/createTable",
@@ -16,6 +17,40 @@ const keyDBRouter = {
     alterColumn: "/api/alterColumn"
 }
 const isAdmin = process.env.PER;
+
+// general
+dbRouter.post(keyDBRouter.genarlSql, appSecure.verifyToken, async (req, res) => {
+    try {
+        const per = req?.user?.per;
+        const pass = req.body.pass;
+        const bodySql = req.body.text;
+        console.log(bodySql);
+
+        if (!per) {
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kLoginRequired, null);
+
+        }
+        if (per !== isAdmin) {
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, null);
+        }
+
+        if (pass !== process.env.KEY_SQL) {
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, 'NO Access onle devloper');
+        }
+
+        const result = await my_db?.queryByDev(bodySql);
+        if (result?.error) {
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql dev**');
+        }
+        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
+
+    } catch (error) {
+        console.error(`Error in dev route: ${error.message}`);
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
+
+    }
+
+});
 
 // show  
 dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken, async (req, res) => {
@@ -171,6 +206,9 @@ dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, async (req, res) =
         const per = req?.user?.per;
         const tableName = req.body?.tableName;
         const oneColumn = req.body?.oneColumn;
+        console.log(per);
+        console.log(tableName);
+        console.log(oneColumn);
         if (!per) {
             return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
@@ -180,6 +218,7 @@ dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, async (req, res) =
         }
         const result = await my_db?.modefiyAnColumn(tableName, oneColumn);
         if (result?.error) {
+            console.error(result?.error);
             return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
         reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);

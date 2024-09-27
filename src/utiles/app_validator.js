@@ -52,16 +52,11 @@ const createUserValidatorSchema = {
         escape: true,
         errorMessage: 'Invalid Password ',
     },
-    // userPhone: {
-    //     isString: true,
-    //     matches: {
-    //         options: /^\d{10}$/,
-    //         errorMessage: 'Phone number must be 10 digits'
-
-    //     },
-    //     escape: true,
-    //     errorMessage: 'Invalid Phone number'
-    // },
+    address: {
+        isString: true,
+        escape: true,
+        errorMessage: 'Invalid address'
+    },
     per: {
         isString: true,
         notEmpty: true,

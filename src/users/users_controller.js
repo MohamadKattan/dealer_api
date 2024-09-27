@@ -8,35 +8,39 @@ const isAdmin = process.env.PER;
 
 const signupUser = async (req, res) => {
     try {
-        const per = req.session?.user?.per;
+        const per = req?.user?.per;
+
         if (!per) {
-            return res.status(401).send({ status: "fail", msg: "Login is required" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
 
         if (per !== isAdmin) {
-            return res.status(403).send({ status: "fail", msg: "You do not have access" }).end();
+            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
         }
 
         const resultValidat = validationResult(req);
         if (resultValidat.isEmpty()) {
             const validdata = matchedData(req);
             const table = 'users';
-            const columns = 'user_name, pass_word, user_phone, per';
-            const values = [validdata.userName, validdata.passWord, validdata?.userPhone ?? '+7', validdata?.per];
+            const columns = 'user_name, pass_word, address, per';
+            const values = [validdata.userName, validdata.passWord, validdata?.address, validdata?.per];
             const result = await my_db.insertNewData(table, columns, values);
+
             if (result?.error) {
-                res.status(500).send({ status: 'fail', msg: result?.error ?? 'error' });
+                console.error(result?.error);
+                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kErrorSignUp, result?.error ?? 'error sql **');
+
             }
-            res.status(200).send({ status: "Success", msg: result?.msg ?? 'ok' }).end();
+            return reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kSignUp, null);
         } else {
             const msg = resultValidat.array()[0]['msg']
             console.error(msg);
-            return res.status(500).send(`Error create new user ${msg}`).end();
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
         }
 
     } catch (error) {
         console.error(`error in sinupUser ${error}`);
-        res.status(500).send({ status: "fail", msg: "Un handel error in sginup User" }).end();
+        reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
     }
 }
 
@@ -70,10 +74,11 @@ const logInUser = async (req, res) => {
 
         } else {
             const msg = resultValidat.array()[0]['msg']
-            reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
+            console.error(msg);
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
         }
     } catch (error) {
-        console.error('An unexpected error occurred')
+        console.error('An unexpected error occurred' + error);
         reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
     }
 }
