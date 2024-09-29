@@ -9,7 +9,6 @@ const isAdmin = process.env.PER;
 const signupUser = async (req, res) => {
     try {
         const per = req?.user?.per;
-
         if (!per) {
             return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
@@ -28,9 +27,10 @@ const signupUser = async (req, res) => {
 
             if (result?.error) {
                 console.error(result?.error);
-                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kErrorSignUp, result?.error ?? 'error sql **');
+                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kErrorSignUp, result?.error?.error ?? 'error sql **');
 
             }
+            
             return reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kSignUp, null);
         } else {
             const msg = resultValidat.array()[0]['msg']

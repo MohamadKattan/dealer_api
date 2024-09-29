@@ -8,7 +8,7 @@ const tK = {
     tterror: 'errors',
     kvalidation: 'validation',
     kAuthFail: 'authFail',
-    kErrorSignUp:"errorSignUp",
+    kErrorSignUp: "errorSignUp",
     kNotFound: 'notFound',
     kTokenFail: 'tokenFail',
     kserverError: 'serverError',
@@ -22,7 +22,7 @@ const tK = {
 // Reusable body 
 const resBody = {
     success: {
-        signUp: { statusCode: 200, status: "success", msg: "SignUp new user  Successful" },
+        signUp: { statusCode: 200, status: "success", msg: "Create new user successful" },
         login: { statusCode: 200, status: "success", msg: "Login Successful" },
         createTable: { statusCode: 200, status: "success", msg: "Create New Table successful" },
         successSql: { statusCode: 200, status: "success", msg: "Successful" },

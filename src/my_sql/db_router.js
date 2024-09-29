@@ -45,7 +45,7 @@ dbRouter.post(keyDBRouter.genarlSql, appSecure.verifyToken, async (req, res) => 
         reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
 
     } catch (error) {
-        console.error(`Error in dev route: ${error.message}`);
+        console.error(`Error in dev route: ${error}`);
         return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
 
     }
@@ -218,7 +218,6 @@ dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, async (req, res) =
         }
         const result = await my_db?.modefiyAnColumn(tableName, oneColumn);
         if (result?.error) {
-            console.error(result?.error);
             return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
         }
         reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);

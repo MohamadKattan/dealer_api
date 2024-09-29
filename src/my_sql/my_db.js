@@ -84,8 +84,6 @@ const showColumns = async (table) => {
 const createNewTable = async (tableName, columns) => {
     let sqlColumns = '';
     let index = 0;
-
-
     try {
         const result = await new Promise((resolve, reject) => {
 
@@ -120,7 +118,7 @@ const createNewTable = async (tableName, columns) => {
                 }
 
                 if (element?.foreignKey) {
-                    sqlColumns += ' FOREIGN KEY';
+                    sqlColumns += ` FOREIGN KEY (${element?.name}) REFERENCES users(user_id)`;
                 }
 
                 if (element?.unique) {
@@ -273,7 +271,7 @@ const modefiyAnColumn = async (tableName, oneColumn) => {
             }
 
             if (oneColumn?.foreignKey) {
-                sqlColumn += ' FOREIGN KEY';
+                sqlColumn += ` FOREIGN KEY (${oneColumn?.name}) REFERENCES users(user_id)`;
             }
 
             if (oneColumn?.unique) {
@@ -284,7 +282,7 @@ const modefiyAnColumn = async (tableName, oneColumn) => {
             pool.query(newsql, async function (error, results, fields) {
                 if (error) {
                     console.error('Error ALTER column ', error);
-                    return reject({ error: error?.message ?? error });
+                    return reject({ error: error?.sqlMessage ?? error });
                 }
                 resolve({ msg: 'Column has been alter' });
             });
@@ -323,7 +321,7 @@ const modefiyAnTable = async (tableName, oneColumn) => {
             }
 
             if (oneColumn?.foreignKey) {
-                sqlColumns += ' FOREIGN KEY';
+                sqlColumns += ` FOREIGN KEY (${oneColumn?.name}) REFERENCES users(user_id)`;
             }
 
             if (oneColumn?.unique) {
@@ -334,7 +332,7 @@ const modefiyAnTable = async (tableName, oneColumn) => {
             pool.query(newsql, async function (error, results, fields) {
                 if (error) {
                     console.error('Error ALTER table:', error);
-                    return reject({ errro: error?.message ?? error });
+                    return reject({ error: error?.sqlMessage ?? error });
                 }
                 resolve({ msg: 'Table has been alter' });
             });
