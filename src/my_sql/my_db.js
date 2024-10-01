@@ -345,24 +345,30 @@ const modefiyAnTable = async (tableName, oneColumn) => {
     }
 }
 
+
 // get data from db
-const getData = async (sql, val) => {
+const getData = async (sql, val = null) => {
     try {
         const result = await new Promise((resolve, reject) => {
-            pool.query(sql, val, function (error, results, fields) {
+
+            const callBack = (error, results) => {
                 if (error) {
-                    console.error('Error to get data:', error?.message ?? error);
                     return reject({ error: error?.message ?? error });
                 }
                 if (results.length <= 0) {
-                    return resolve({ msg: 'No found' });
+                    return resolve({msg: 'No found' });
                 }
-                resolve({ msg: 'ok', data: results });
-            });
+                resolve({ results });
+            }
+            if (val != null) {
+                pool.query(sql, val, callBack);
+
+            } else {
+                pool.query(sql, callBack);
+            }
         });
         return result;
     } catch (error) {
-        console.error('error in get data from db ' + error);
         return { error: error };
     }
 }

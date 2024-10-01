@@ -30,7 +30,7 @@ const signupUser = async (req, res) => {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kErrorSignUp, result?.error?.error ?? 'error sql **');
 
             }
-            
+
             return reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kSignUp, null);
         } else {
             const msg = resultValidat.array()[0]['msg']
@@ -49,16 +49,17 @@ const logInUser = async (req, res) => {
         const resultValidat = validationResult(req);
         if (resultValidat.isEmpty()) {
             const validdata = matchedData(req);
-            const sql = `SELECT user_name, per, user_id FROM users WHERE user_name = ? AND  pass_word = ?;`;
+            const sql = `SELECT * FROM users WHERE user_name = ? AND  pass_word = ?;`;
             const val = [validdata?.userName, validdata?.passWord];
             const result = await my_db?.getData(sql, val);
             if (result?.error) {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kAuthFail, result?.error);
             }
-            if (!result?.data) {
+            if (result?.msg == 'No found') {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kNotFound, null);
             }
-            const user = result?.data[0];
+            console.log(result)
+            const user = result['results'][0];
             const newToken = await appSecure.createToken(user);
             if (newToken?.error) {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kTokenFail, null);
@@ -67,11 +68,10 @@ const logInUser = async (req, res) => {
                 user_id: user?.user_id,
                 user_name: user?.user_name,
                 per: user?.per,
+                address: user?.address,
                 token: newToken
             }
-            console.log(`data:  ${data},\n token ${newToken}`);
             reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kLogin, null, data);
-
         } else {
             const msg = resultValidat.array()[0]['msg']
             console.error(msg);
@@ -83,6 +83,24 @@ const logInUser = async (req, res) => {
     }
 }
 
-const usersController = { signupUser, logInUser }
+const getAllUsers = async (req, res) => {
+    try {
+        const per = req?.user?.per;
+        const sql = 'Select * from users';
+        await reusable.checkPerType(per);
+        const result = await my_db.getData(sql);
+        if (result?.error) {
+            console.error(`Error in get all users :: ${result?.error}`);
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kGetUsers, result?.error);
+        }
+
+        reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kGetUsers, null, result);
+    } catch (error) {
+        console.error(`UnHandel error in get all users :: ${error}`);
+        return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, error);
+    }
+}
+
+const usersController = { signupUser, logInUser, getAllUsers }
 
 export default usersController;

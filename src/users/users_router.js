@@ -9,11 +9,14 @@ const userRouter = Router();
 
 const keyUserRouter = {
     signUp: "/api/createUser",
-    logIn: "/api/logIn"
+    logIn: "/api/logIn",
+    getAllUsers: "/api/getAllUsers"
 };
 
 userRouter.post(keyUserRouter.signUp, appSecure.verifyToken, checkSchema(userValidator.createUserValidatorSchema), usersController.signupUser);
 
 userRouter.post(keyUserRouter.logIn, checkSchema(userValidator.loginValidatorSchema), usersController.logInUser);
+
+userRouter.get(keyUserRouter.getAllUsers, appSecure.verifyToken, usersController.getAllUsers)
 
 export default userRouter;

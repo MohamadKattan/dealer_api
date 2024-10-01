@@ -5,6 +5,7 @@ const tK = {
     kSignUp: 'signUp',
     kcreateTable: 'createTable',
     ksuccess: 'successSql',
+    kGetUsers: 'getUsers',
     tterror: 'errors',
     kvalidation: 'validation',
     kAuthFail: 'authFail',
@@ -26,6 +27,7 @@ const resBody = {
         login: { statusCode: 200, status: "success", msg: "Login Successful" },
         createTable: { statusCode: 200, status: "success", msg: "Create New Table successful" },
         successSql: { statusCode: 200, status: "success", msg: "Successful" },
+        getUsers: { statusCode: 200, status: "success", msg: "Get  all users data Successful" }
     },
     errors: {
         validation: { statusCode: 400, status: "fail", msg: "Validation failed" },
@@ -40,6 +42,7 @@ const resBody = {
         inviledToken: { statusCode: 401, status: "fail", msg: "Invalid token" },
         kNoTokenP: { statusCode: 403, status: "fail", msg: "No token provided" },
         kSignUp: { statusCode: 401, status: "fail", msg: "Authentication failed" },
+        getUsers: { statusCode: 400, status: "fail", msg: "Error to get all users" }
     }
 };
 
@@ -48,10 +51,21 @@ const sendRes = (res, type, key, msg, data = null) => {
     const responseConfig = resBody[type][key];
     const response = { status: responseConfig.status, msg: msg ?? responseConfig.msg };
     if (data) response.data = data;
-    // console.log(`result from sendRes : ${JSON.stringify(response.msg)}`);
     return res.status(responseConfig.statusCode).send(JSON.stringify(response)).end();
 };
 
-const reusable = { sendRes, tK };
+
+const checkPerType = (per) => {
+    const isAdmin = process.env.PER;
+    if (!per) {
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
+    }
+
+    if (per !== isAdmin) {
+        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
+    }
+}
+
+const reusable = { sendRes, checkPerType, tK };
 
 export default reusable;
