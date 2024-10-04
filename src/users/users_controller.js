@@ -51,7 +51,7 @@ const logInUser = async (req, res) => {
             const validdata = matchedData(req);
             const sql = `SELECT * FROM users WHERE user_name = ? AND  pass_word = ?;`;
             const val = [validdata?.userName, validdata?.passWord];
-            const result = await my_db?.getData(sql, val);
+            const result = await my_db?.queryMyDb(sql, val);
             if (result?.error) {
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kAuthFail, result?.error);
             }
@@ -88,7 +88,7 @@ const getAllUsers = async (req, res) => {
         const per = req?.user?.per;
         const sql = 'Select * from users';
         await reusable.checkPerType(per);
-        const result = await my_db.getData(sql);
+        const result = await my_db?.queryMyDb(sql);
         if (result?.error) {
             console.error(`Error in get all users :: ${result?.error}`);
             return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kGetUsers, result?.error);
@@ -101,6 +101,37 @@ const getAllUsers = async (req, res) => {
     }
 }
 
-const usersController = { signupUser, logInUser, getAllUsers }
+const deleteOneUser = async (req, res) => {
+    try {
+        const per = req?.user?.per;
+        const resultValidat = validationResult(req);
+        if (!resultValidat.isEmpty) {
+            const msg = resultValidat.array()[0]['msg']
+            console.error(msg);
+            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
+        }
+        await reusable.checkPerType(per);
+        const validdata = matchedData(req);
+        const sql = 'DELETE FROM users WHERE user_id = ?;';
+        const val = [validdata?.id];
+        console.log(val)
+        const result = await my_db.queryMyDb(sql, val);
+        if (result?.error) {
+            console.error(`Error in delete one user :: ${result?.error}`);
+            return reusable.sendRes(res, reusable?.tK.tterror, reusable.tK?.kDeleteOnUser, result?.error);
+        }
+        const effectRow = result?.results?.affectedRows;
+        if (effectRow == 0) {
+            return reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kDeleteOnUser, 'No found users match with this data !!');
+        }
+        reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kDeleteOnUser, null);
+    } catch (error) {
+        console.error(`catch error in deleteOneUser ${error}`);
+        reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
+    }
+
+}
+
+const usersController = { signupUser, logInUser, getAllUsers, deleteOneUser }
 
 export default usersController;

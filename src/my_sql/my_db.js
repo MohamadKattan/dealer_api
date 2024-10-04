@@ -346,17 +346,33 @@ const modefiyAnTable = async (tableName, oneColumn) => {
 }
 
 
+const errorPatterns = {
+    'Duplicate entry': /Duplicate entry '[^']+'/
+};
+
+function extractErrorMessage(errorMessage = null) {
+    for (const patternName in errorPatterns) {
+        const pattern = errorPatterns[patternName];
+        const match = errorMessage.match(pattern);
+        if (match) {
+            return match[0];
+        }
+    }
+    return errorMessage;
+}
+
+
 // get data from db
-const getData = async (sql, val = null) => {
+const queryMyDb = async (sql, val = null) => {
     try {
         const result = await new Promise((resolve, reject) => {
 
             const callBack = (error, results) => {
                 if (error) {
-                    return reject({ error: error?.message ?? error });
+                    return reject({ error: error?.sqlMessage ?? error });
                 }
                 if (results.length <= 0) {
-                    return resolve({msg: 'No found' });
+                    return resolve({ msg: 'No found' });
                 }
                 resolve({ results });
             }
@@ -387,8 +403,9 @@ const insertNewData = async (tableName, column, values) => {
             const flattenedValues = values.flat();
             pool.query(sql, flattenedValues, async function (error, results, fields) {
                 if (error) {
-                    console.error('Error to insert new data :', error.message);
-                    return reject({ error: error?.message ?? error });
+                    console.error('Error to insert new data :', error?.sqlMessage);
+                    const extractedMessage = extractErrorMessage(error?.sqlMessage);
+                    return reject({ error: extractedMessage ?? error?.sqlMessage });
                 }
                 resolve({ msg: 'New data has been sat' });
             });
@@ -400,7 +417,6 @@ const insertNewData = async (tableName, column, values) => {
     }
 }
 
-
-const my_db = { pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, getData, queryByDev };
+const my_db = { pool, createNewTable, showAllTable, dropAnTable, truncateTable, modefiyAnTable, deleteAnColumn, modefiyAnColumn, showColumns, insertNewData, queryMyDb, queryByDev };
 
 export default my_db;

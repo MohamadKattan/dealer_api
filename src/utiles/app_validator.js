@@ -2,7 +2,7 @@ import { query, body, param, check, checkSchema, validationResult, matchedData }
 
 
 const appValidatorQuery = (reqQuery) => {
-    query(reqQuery).notEmpty().escape();
+    query(reqQuery).isNumeric().escape();
 }
 
 
@@ -89,6 +89,16 @@ const loginValidatorSchema = {
     }
 }
 
-const userValidator = { createUserValidatorSchema, loginValidatorSchema }
+
+const deleteOneUser = {
+    id: {
+        isNumeric: true,
+        notEmpty: true,
+        escape: true,
+        errorMessage: 'Invalid userId',
+    }
+}
+
+const userValidator = { createUserValidatorSchema, loginValidatorSchema, deleteOneUser }
 
 export default userValidator;

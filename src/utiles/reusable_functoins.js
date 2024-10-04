@@ -17,7 +17,8 @@ const tK = {
     kNoAccess: 'noAccess',
     kErrorMysQL: 'errorSql',
     kInviledToken: 'inviledToken',
-    kNoTokenP: 'noToken'
+    kNoTokenP: 'noToken',
+    kDeleteOnUser: "deleteOnUser"
 };
 
 // Reusable body 
@@ -27,7 +28,8 @@ const resBody = {
         login: { statusCode: 200, status: "success", msg: "Login Successful" },
         createTable: { statusCode: 200, status: "success", msg: "Create New Table successful" },
         successSql: { statusCode: 200, status: "success", msg: "Successful" },
-        getUsers: { statusCode: 200, status: "success", msg: "Get  all users data Successful" }
+        getUsers: { statusCode: 200, status: "success", msg: "Get  all users data Successful" },
+        deleteOnUser: { statusCode: 200, status: "success", msg: "Delete  one user  Successful" }
     },
     errors: {
         validation: { statusCode: 400, status: "fail", msg: "Validation failed" },
@@ -42,7 +44,8 @@ const resBody = {
         inviledToken: { statusCode: 401, status: "fail", msg: "Invalid token" },
         kNoTokenP: { statusCode: 403, status: "fail", msg: "No token provided" },
         kSignUp: { statusCode: 401, status: "fail", msg: "Authentication failed" },
-        getUsers: { statusCode: 400, status: "fail", msg: "Error to get all users" }
+        getUsers: { statusCode: 400, status: "fail", msg: "Error to get all users" },
+        deleteOnUser: { statusCode: 400, status: "fail", msg: "Error to delete one user" }
     }
 };
 

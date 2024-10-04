@@ -206,9 +206,6 @@ dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, async (req, res) =
         const per = req?.user?.per;
         const tableName = req.body?.tableName;
         const oneColumn = req.body?.oneColumn;
-        console.log(per);
-        console.log(tableName);
-        console.log(oneColumn);
         if (!per) {
             return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
         }
