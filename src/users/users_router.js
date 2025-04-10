@@ -11,7 +11,8 @@ const keyUserRouter = {
     signUp: "/api/createUser",
     logIn: "/api/logIn",
     getAllUsers: "/api/getAllUsers",
-    deleteOneUser: "/api/deleteOneUser"
+    deleteOneUser: "/api/deleteOneUser",
+    editeUserInfo: "/api/editeOneUser"
 };
 
 userRouter.post(keyUserRouter.signUp, appSecure.verifyToken, checkSchema(userValidator.createUserValidatorSchema), usersController.signupUser);
@@ -21,5 +22,7 @@ userRouter.post(keyUserRouter.logIn, checkSchema(userValidator.loginValidatorSch
 userRouter.get(keyUserRouter.getAllUsers, appSecure.verifyToken, usersController.getAllUsers);
 
 userRouter.delete(keyUserRouter.deleteOneUser, checkSchema(userValidator.deleteOneUser), appSecure.verifyToken, usersController.deleteOneUser);
+
+userRouter.put(keyUserRouter.editeUserInfo, checkSchema(userValidator.editeUser), appSecure.verifyToken, usersController.editeUserInfo);
 
 export default userRouter;

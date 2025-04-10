@@ -1,4 +1,4 @@
-import { query, body, param, check, checkSchema, validationResult, matchedData, cookie } from 'express-validator';
+import { validationResult, matchedData } from 'express-validator';
 import my_db from '../my_sql/my_db.js';
 import appSecure from '../utiles/app_secure.js';
 import reusable from '../utiles/reusable_functoins.js';
@@ -28,7 +28,6 @@ const signupUser = async (req, res) => {
             if (result?.error) {
                 console.error(result?.error);
                 return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kErrorSignUp, result?.error?.error ?? 'error sql **');
-
             }
 
             return reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kSignUp, null);
@@ -53,16 +52,16 @@ const logInUser = async (req, res) => {
             const val = [validdata?.userName, validdata?.passWord];
             const result = await my_db?.queryMyDb(sql, val);
             if (result?.error) {
-                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kAuthFail, result?.error);
+                return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kAuthFail, result?.error);
             }
             if (result?.msg == 'No found') {
-                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kNotFound, null);
+                return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kNotFound, null);
             }
             console.log(result)
             const user = result['results'][0];
             const newToken = await appSecure.createToken(user);
             if (newToken?.error) {
-                return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kTokenFail, null);
+                return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kTokenFail, null);
             }
             const data = {
                 user_id: user?.user_id,
@@ -71,23 +70,24 @@ const logInUser = async (req, res) => {
                 address: user?.address,
                 token: newToken
             }
-            reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kLogin, null, data);
+            reusable.sendRes(res, reusable.tK.typeSuccess, reusable.tK.kLogin, null, data);
         } else {
             const msg = resultValidat.array()[0]['msg']
             console.error(msg);
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
+            return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kvalidation, msg);
         }
     } catch (error) {
         console.error('An unexpected error occurred' + error);
-        reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
+        reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kserverError, `${error}`);
     }
 }
 
 const getAllUsers = async (req, res) => {
     try {
         const per = req?.user?.per;
+        const resultPer = await reusable.checkPerType(per, res);
+        if (!resultPer) return;
         const sql = 'Select * from users';
-        await reusable.checkPerType(per);
         const result = await my_db?.queryMyDb(sql);
         if (result?.error) {
             console.error(`Error in get all users :: ${result?.error}`);
@@ -104,13 +104,10 @@ const getAllUsers = async (req, res) => {
 const deleteOneUser = async (req, res) => {
     try {
         const per = req?.user?.per;
-        const resultValidat = validationResult(req);
-        if (!resultValidat.isEmpty) {
-            const msg = resultValidat.array()[0]['msg']
-            console.error(msg);
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
-        }
-        await reusable.checkPerType(per);
+        const resultVald = await reusable.resultValidatData(req, res);
+        if (!resultVald) return;
+        const resultPer = await reusable.checkPerType(per, res);
+        if (!resultPer) return;
         const validdata = matchedData(req);
         const sql = 'DELETE FROM users WHERE user_id = ?;';
         const val = [validdata?.id];
@@ -129,9 +126,36 @@ const deleteOneUser = async (req, res) => {
         console.error(`catch error in deleteOneUser ${error}`);
         reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
     }
+}
+
+const editeUserInfo = async (req, res) => {
+    try {
+        const per = req?.user?.per;
+        const resultVald = await reusable.resultValidatData(req, res);
+        if (!resultVald) return;
+        const resultPer = await reusable.checkPerType(per, res);
+        if (!resultPer) return;
+        const validdata = matchedData(req);
+        const sql = `UPDATE users SET user_name =?, pass_word =?, per=?, address =? WHERE user_id = ${my_db.pool.escape(validdata?.userId)};`;
+        const val = [validdata?.userName, validdata?.passWord, validdata?.per, validdata.address];
+        const result = await my_db.queryMyDb(sql, val);
+        console.log(sql)
+        if (result?.error) {
+            console.error(`Error in edite one user :: ${result?.error}`);
+            return reusable.sendRes(res, reusable?.tK.tterror, reusable.tK?.kEditeUserInfo, result?.error);
+        }
+        const effectRow = result?.results?.affectedRows;
+        if (effectRow == 0) {
+            return reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kEditeUserInfo, 'No found users match with this data !!');
+        }
+        reusable.sendRes(res, reusable.tK.ttsuccess, reusable.tK.kEditeUserInfo, null);
+    } catch (error) {
+        console.error(`catch error in editeUserInfo :: ${error}`);
+        reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kserverError, `${error}`);
+    }
 
 }
 
-const usersController = { signupUser, logInUser, getAllUsers, deleteOneUser }
+const usersController = { signupUser, logInUser, getAllUsers, deleteOneUser, editeUserInfo }
 
 export default usersController;

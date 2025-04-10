@@ -1,39 +1,48 @@
-import mysql from 'mysql';
 
+import reusable from "../utiles/reusable_functoins.js";
+import { poolConfig } from './config_db.js';
+import mysql from 'mysql2';
+
+// right now old 
 const pool = mysql.createPool({
-    connectionLimit: 10,
     host: process.env.HOST_DB,
     user: process.env.USER_DB,
     password: process.env.PASSWORD_DB,
     database: process.env.NAME_DB,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    keepAliveInitialDelay: 10000
 });
 
-// show or get
-const showAllTable = async () => {
-    const sql = 'SHOW TABLES';
-    const listOfTables = [];
+// show or get 
+const showAllTable = async (req, res) => {
+    let conn;
     try {
-        const result = await new Promise((resolve, reject) => {
-            pool.query(sql, (error, results) => {
-                if (error) {
-                    console.error('Error showing all tables:', error);
-                    return reject({ error: error.message }); // Return error message
-                }
-                if (results.length <= 0) {
-                    return resolve({ msg: 'No tables exist yet...', data: [] });
-                }
-                // Collect table names
-                for (const ele of results) {
-                    listOfTables.push(ele?.Tables_in_dealer);
-                }
-                resolve({ msg: `Number of tables: ${results.length}}`, data: listOfTables });
-            });
-        });
+        const sql = 'SHOW TABLES';
+        const per = req?.user?.per;
 
-        return result;
+        const checkPer = await reusable.checkPerType(res, per);
+        if (!checkPer) return;
+        conn = await poolConfig.getConnection();
+        const [results] = await conn.execute(sql);
+
+        if (results.length === 0) {
+            return reusable.sendRes(res, reusable.tK.typeSuccess, reusable.tK.kNoTables);
+        }
+
+        const listOfTables = results.map(row => row.Tables_in_dealer);
+        return reusable.sendRes(res, reusable.tK?.typeSuccess, reusable.tK?.ksuccess, 'ok', listOfTables);
+
     } catch (error) {
-        console.error('Unexpected error in showAllTable:', error);
-        return { error: error.message }; // Return error message
+        console.error(`[DB] showAllTable failed:`, {
+            error: error.message,
+            sql: sql,
+            timestamp: new Date().toISOString()
+        });
+        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kserverError);
+    } finally {
+        if (conn)  conn.release();
     }
 };
 

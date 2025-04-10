@@ -53,28 +53,8 @@ dbRouter.post(keyDBRouter.genarlSql, appSecure.verifyToken, async (req, res) => 
 });
 
 // show  
-dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kLoginRequired, null);
+dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken,my_db.showAllTable);
 
-        }
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.showAllTable(req, res);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL,
-                result?.error?.error ?? 'error sql**');
-
-        }
-        return reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, result?.msg, result?.data);
-    } catch (error) {
-        console.error(`Error in showTables route: ${error.message}`);
-        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
 
 dbRouter.post(keyDBRouter?.showColumns, appSecure.verifyToken, async (req, res) => {
     try {
