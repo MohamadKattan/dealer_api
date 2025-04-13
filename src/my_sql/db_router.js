@@ -18,67 +18,14 @@ const keyDBRouter = {
 }
 const isAdmin = process.env.PER;
 
-// general
-dbRouter.post(keyDBRouter.genarlSql, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const pass = req.body.pass;
-        const bodySql = req.body.text;
-        console.log(bodySql);
-
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kLoginRequired, null);
-
-        }
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, null);
-        }
-
-        if (pass !== process.env.KEY_SQL) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, 'NO Access onle devloper');
-        }
-
-        const result = await my_db?.queryByDev(bodySql);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql dev**');
-        }
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
-
-    } catch (error) {
-        console.error(`Error in dev route: ${error}`);
-        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-
-    }
-
-});
+// general just for dev env
+// dbRouter.post(keyDBRouter.genarlSql, appSecure.verifyToken, my_db.queryByDev);
 
 // show  
 dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken,my_db.showAllTable);
 
 
-dbRouter.post(keyDBRouter?.showColumns, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kLoginRequired, null);
-
-        }
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.showColumns(tableName);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL,
-                result?.error?.error ?? 'error sql**');
-        }
-        return reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, result?.msg, result?.data);
-
-    } catch (error) {
-        console.error(`Error in showColumns route: ${error.message}`);
-        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
+dbRouter.post(keyDBRouter?.showColumns, appSecure.verifyToken, my_db.showColumns);
 
 // create
 dbRouter.post(keyDBRouter?.createTable, appSecure.verifyToken, async (req, res) => {

@@ -77,25 +77,28 @@ const createToken = async (data) => {
 }
 
 const verifyToken = async (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) {
+        console.error('No token provided');
+        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoTokenP);
+    }
+
     try {
-        const token = req.headers['authorization'];
-        if (!token) {
-            console.error('No token provided');
-            return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoTokenP);
-        }
-        jwt.verify(token, secretKey, { algorithms: [getAlgorithm()] }, (err, decoded) => {
+
+        jwt.verify(token, secretKey, {
+            algorithms: [getAlgorithm()]
+        }, (err, decoded) => {
+
             if (err) {
                 console.error('InviledToken');
                 return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kInviledToken);
             }
-
             req.user = decoded;
             console.log('token is okay')
             next();
         });
 
     } catch (error) {
-        console.error(`catch Un hndel error`);
         return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kInviledToken, `error at verifyToken :: ${error}`);
     }
 }

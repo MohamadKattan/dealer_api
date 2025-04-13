@@ -84,6 +84,15 @@ const checkPerType = async (res, per) => {
     }
 }
 
+const typeIsString = async (name) => {
+    if (typeof name !== 'string' || !/^[a-zA-Z0-9_]+$/.test(name)) {
+        return false;
+    } else {
+        return true;
+    }
+
+}
+
 
 const resultValidatData = async (req, res) => {
     const resultValidat = validationResult(req);
@@ -97,6 +106,6 @@ const resultValidatData = async (req, res) => {
     }
 }
 
-const reusable = { sendRes, checkPerType, resultValidatData,sanitizeTableName ,tK };
+const reusable = { sendRes, checkPerType, resultValidatData, sanitizeTableName, typeIsString, tK };
 
 export default reusable;

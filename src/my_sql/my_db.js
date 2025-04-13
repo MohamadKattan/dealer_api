@@ -1,4 +1,5 @@
 
+import appSecure from "../utiles/app_secure.js";
 import reusable from "../utiles/reusable_functoins.js";
 import { poolConfig } from './config_db.js';
 import mysql from 'mysql2';
@@ -14,6 +15,9 @@ const pool = mysql.createPool({
     queueLimit: 0,
     keepAliveInitialDelay: 10000
 });
+
+const TABLE_WHITELIST = new Set(['users']);
+
 
 // show or get 
 const showAllTable = async (req, res) => {
@@ -40,52 +44,64 @@ const showAllTable = async (req, res) => {
             sql: sql,
             timestamp: new Date().toISOString()
         });
-        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kserverError);
+        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kserverError, error.code ?? null);
     } finally {
-        if (conn)  conn.release();
+        if (conn) conn.release();
     }
 };
 
-const showColumns = async (table) => {
-    const tableName = table;
-    let listOfColumns = [];
+const showColumns = async (req, res) => {
+    let conn;
+    const per = req?.user?.per;
+    const tableName = req.body?.tableName?.trim();
+
+    const checkPer = await reusable.checkPerType(res, per);
+    if (!checkPer) return;
+
+    if (!tableName) {
+        return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kNoTables, 'table name is not defined')
+    }
+
+    if (!TABLE_WHITELIST.has(tableName)) {
+        return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kNoAccess, 'INVALID_TABLE');
+    }
+
+
+    const isString = await reusable.typeIsString(tableName);
+    if (!isString) {
+        return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kNoAccess, 'INVALID_TABLE_NAME');
+    }
+
     try {
-        const result = await new Promise((resolve, reject) => {
-
-            if (!tableName) {
-                return reject({ error: 'table name is not defined' });
-            }
-            pool.escapeId(tableName);
-            const sql = `SHOw COLUMNS FROM ${tableName}`;
-
-            pool.query(sql, async function (error, results, fields) {
-                if (error) {
-                    console.error('Error  :', error?.message);
-                    return reject({ error: error?.message });
-                }
-
-                if (results.length <= 0) {
-                    return resolve({ msg: `No columns exist yet...`, data: [] });
-
-                }
-                for (const ele of results) {
-                    const oneColumn = {
-                        name: ele?.Field,
-                        type: ele?.Type,
-                        null: ele?.Null
-                    }
-                    listOfColumns.push(oneColumn);
-                    // listOfColumns.push(`name: ${ele?.Field}, type : ${ele?.Type}, null : ${ele?.Null}`);
-                }
-
-                resolve({ msg: "ok", data: listOfColumns });
-            });
-
+        conn = await poolConfig.getConnection();
+        const sql = `SHOW COLUMNS FROM ??`;
+        const [results] = await conn.query({
+            sql: sql,
+            values: [tableName],
+            timeout: process.env.NODE_ENV === 'production' ? 1000 : 5000
         });
-        return result;
+
+        if (results.length <= 0) {
+            return reusable.sendRes(res, reusable.tK.typeSuccess, reusable.tK.ksuccess, 'No columns exist yet...', [])
+
+        }
+
+        const columns = results.map(({ Field, Type, Null }) => ({
+            name: Field,
+            type: Type,
+            nullable: Null === 'YES'
+        }));
+
+        return reusable.sendRes(res, reusable.tK.typeSuccess, reusable.tK.ksuccess, 'ok', columns)
+
     } catch (error) {
-        console.error('Unexpected error in showColumns', error);
-        return { error: error.message };
+        console.error('[SECURE_DB] showColumns:', {
+            table: req.body.tableName?.substring(0, 20),
+            error: error?.code
+        });
+        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kserverError, error.code);
+    } finally {
+        if (conn) conn.release();
     }
 }
 
@@ -156,22 +172,34 @@ const createNewTable = async (tableName, columns) => {
     }
 }
 
-const queryByDev = async (sql) => {
+const queryByDev = async (req, res) => {
+    let conn;
+    const per = req?.user?.per;
+    const pass = req.body.pass;
+    const bodySql = req.body.text;
     try {
-        const result = new Promise((resolve, reject) => {
-            pool.query(sql, function (error, results, fields) {
-                if (error) {
-                    console.error('Error query dev:', error?.sqlMessage);
-                    return reject({ error: error?.sqlMessage });
-                }
-                resolve({ msg: 'okay' });
-            });
+        const chekPer = await reusable.checkPerType(res, per);
+        if (!chekPer) return;
 
-        });
-        return result;
+        if (pass !== process.env.KEY_SQL) {
+            return reusable.sendRes(res, reusable.tK.typeError, reusable.tK?.kNoAccess, 'NO Access onle devloper');
+        }
+
+        conn = await poolConfig.getConnection();
+        await conn.execute(bodySql);
+
+
+        return reusable.sendRes(res, reusable.tK?.typeSuccess, reusable.tK?.ksuccess);
+
     } catch (error) {
-        console.error(error);
-        return { error: error };
+        console.error(`[DB] queryByDev failed:`, {
+            error: error.message,
+            sql: bodySql,
+            timestamp: new Date().toISOString()
+        });
+        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kserverError, error.message ?? null);
+    } finally {
+        if (conn) conn.release();
     }
 }
 
