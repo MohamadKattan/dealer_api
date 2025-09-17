@@ -1,4 +1,4 @@
-import { query, body, param, check, checkSchema, validationResult, matchedData } from 'express-validator';
+import { query } from 'express-validator';
 
 
 const appValidatorQuery = (reqQuery) => {
@@ -168,6 +168,8 @@ const editeUser = {
 
     }
 }
+
+
 
 const userValidator = { createUserValidatorSchema, loginValidatorSchema, deleteOneUser, editeUser }
 

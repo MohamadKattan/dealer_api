@@ -23,13 +23,17 @@ app.use(hpp());
 // app.use(ExpressMongoSanitize());
 app.use(mainRouter);
 app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        console.warn('Headers already sent for:', req.path);
+        return next(err); // Just log
+    }
+    
     res.status(err.status || 500).json({
         error: {
-            message: process.env.NODE_ENV === 'development'
-                ? err.message
+            message: process.env.NODE_ENV === 'development' 
+                ? err.message 
                 : 'Operation failed',
-            code: err.code,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+            code: err.code
         }
     });
 });

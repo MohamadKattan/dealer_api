@@ -23,6 +23,12 @@ const limiter = rateLimit({
     limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
     standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+    keyGenerator: req => req.ip + req.body.email,
+    handler: (req, res) => {
+        res.setHeader('Retry-After', 900);
+        return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kauthLimt);
+    }
+
 });
 
 const authLimter = rateLimit({
@@ -30,17 +36,18 @@ const authLimter = rateLimit({
     limit: 5,
     keyGenerator: req => req.ip + req.body.email,
     handler: (req, res) => {
-        res.status(429).setHeader('Retry-After', 900).json({
-            error: "Too many attempts. Try again in 15 minutes"
-        });
+        res.setHeader('Retry-After', 900);
+        return reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kauthLimt);
     }
 
 });
+
 //cors
 const corsOptions = {
-    origin: process.env.NODE_ENV === 'production'
-        ? ['https://yourdomain.com']
-        : ['http://localhost:3000'],
+    // origin: process.env.NODE_ENV === 'production'
+    //     ? ['https://yourdomain.com']
+    //     : ['http://localhost:3000'],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     optionsSuccessStatus: 200,
@@ -63,10 +70,10 @@ const createToken = async (data) => {
     const newUser = {
         userName: data?.user_name,
         per: data?.per,
-        userId: data?.user_id
+        userId: data?.id
     }
     try {
-        const options = { algorithm: getAlgorithm(), expiresIn: '1h' }
+        const options = { algorithm: getAlgorithm(), expiresIn: '10d' }
 
         const token = jwt.sign(newUser, secretKey, options);
         return token;
@@ -77,31 +84,28 @@ const createToken = async (data) => {
 }
 
 const verifyToken = async (req, res, next) => {
-    const token = req.headers['authorization'];
+    const token = req.headers?.authorization || req.headers?.Authorization;
+    
     if (!token) {
-        console.error('No token provided');
-        return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoTokenP);
+        return res.status(403).send(JSON.stringify({ statusCode: 403, status: "fail", msg: "No token provided" })).end();
+
     }
 
-    try {
+    jwt.verify(token, secretKey, {
+        algorithms: [getAlgorithm()]
+    }, (err, decoded) => {
 
-        jwt.verify(token, secretKey, {
-            algorithms: [getAlgorithm()]
-        }, (err, decoded) => {
+        if (err) {
+            console.error('InviledToken');
+            return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kInviledToken);
+        }
+        req.user = decoded;
+        console.log('token is okay');
+        next();
+    });
 
-            if (err) {
-                console.error('InviledToken');
-                return reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kInviledToken);
-            }
-            req.user = decoded;
-            console.log('token is okay')
-            next();
-        });
-
-    } catch (error) {
-        return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kInviledToken, `error at verifyToken :: ${error}`);
-    }
 }
+
 
 const appSecure = { createToken, verifyToken, corsOptions, limiter, authLimter, helmetHeader }
 

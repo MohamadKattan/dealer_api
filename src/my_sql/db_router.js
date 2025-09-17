@@ -1,7 +1,6 @@
 import { Router } from "express";
 import my_db from "./my_db.js";
 import appSecure from "../utiles/app_secure.js";
-import reusable from "../utiles/reusable_functoins.js";
 
 const dbRouter = Router();
 
@@ -16,163 +15,30 @@ const keyDBRouter = {
     dropColumn: "/api/dropColumn",
     alterColumn: "/api/alterColumn"
 }
-const isAdmin = process.env.PER;
+
 
 // general just for dev env
 // dbRouter.post(keyDBRouter.genarlSql, appSecure.verifyToken, my_db.queryByDev);
 
 // show  
-dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken,my_db.showAllTable);
+dbRouter.get(keyDBRouter?.showTables, appSecure.verifyToken, my_db.showAllTable);
 
 
 dbRouter.post(keyDBRouter?.showColumns, appSecure.verifyToken, my_db.showColumns);
 
 // create
-dbRouter.post(keyDBRouter?.createTable, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        const columns = req.body?.columns
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
-        }
-
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.createNewTable(tableName, columns);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
-        }
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.kcreateTable, null);
-
-    } catch (error) {
-        console.error(`Error in create table router: ${error}`);
-        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
+dbRouter.post(keyDBRouter?.createTable, appSecure.verifyToken, my_db.createNewTable);
 
 //del
-dbRouter.delete(keyDBRouter?.dropTable, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
-        }
+dbRouter.delete(keyDBRouter?.dropTable, appSecure.verifyToken, my_db.dropAnTable);
 
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
-        }
+dbRouter.delete(keyDBRouter?.truncateTable, appSecure.verifyToken, my_db.truncateTable);
 
-        const result = await my_db?.dropAnTable(tableName);
-
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
-        }
-
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
-
-    } catch (error) {
-        console.error(`Error in delete table route: ${error?.message ?? error}`);
-        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
-
-dbRouter.delete(keyDBRouter?.truncateTable, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
-        }
-
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.truncateTable(tableName);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
-        }
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
-
-    } catch (error) {
-        console.error(`Error in delete table route: ${error?.message ?? error}`);
-        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
-
-dbRouter.delete(keyDBRouter?.dropColumn, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        const oneColumn = req.body?.oneColumn;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
-        }
-
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.deleteAnColumn(tableName, oneColumn);
-
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
-        }
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
-    } catch (error) {
-        console.error(`Error in delete Column route: ${error?.message ?? error}`);
-        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
+dbRouter.delete(keyDBRouter?.dropColumn, appSecure.verifyToken, my_db.deleteAnColumn);
 
 // put
-dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, async (req, res) => {
+dbRouter.put(keyDBRouter?.alterColumn, appSecure.verifyToken, my_db.modefiyAnColumn);
 
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        const oneColumn = req.body?.oneColumn;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
-        }
-
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.modefiyAnColumn(tableName, oneColumn);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
-        }
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
-    } catch (error) {
-        console.error(`Error in delete modefiyAnColumn route: ${error?.message ?? error}`);
-        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-
-});
-
-dbRouter.put(keyDBRouter?.alterTable, appSecure.verifyToken, async (req, res) => {
-    try {
-        const per = req?.user?.per;
-        const tableName = req.body?.tableName;
-        const oneColumn = req.body?.oneColumn;
-        if (!per) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kLoginRequired, null);
-        }
-
-        if (per !== isAdmin) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kNoAccess, null);
-        }
-        const result = await my_db?.modefiyAnTable(tableName, oneColumn);
-        if (result?.error) {
-            return reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kErrorMysQL, result?.error?.error ?? 'error sql**');
-        }
-        reusable.sendRes(res, reusable.tK?.ttsuccess, reusable.tK?.ksuccess, null);
-    } catch (error) {
-        console.error(`Error in delete modefiyAnTable route: ${error?.message ?? error}`);
-        reusable.sendRes(res, reusable.tK?.tterror, reusable.tK?.kserverError, null);
-    }
-});
+dbRouter.put(keyDBRouter?.alterTable, appSecure.verifyToken, my_db.modefiyAnTable);
 
 export default dbRouter;

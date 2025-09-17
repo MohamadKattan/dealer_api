@@ -15,14 +15,14 @@ const keyUserRouter = {
     editeUserInfo: "/api/editeOneUser"
 };
 
-userRouter.post(keyUserRouter.signUp, appSecure.verifyToken, checkSchema(userValidator.createUserValidatorSchema), usersController.signupUser);
+userRouter.post(keyUserRouter.signUp, appSecure.authLimter, appSecure.verifyToken, checkSchema(userValidator.createUserValidatorSchema), usersController.signupUser);
 
-userRouter.post(keyUserRouter.logIn, checkSchema(userValidator.loginValidatorSchema), usersController.logInUser);
+userRouter.post(keyUserRouter.logIn, appSecure.authLimter, checkSchema(userValidator.loginValidatorSchema), usersController.logInUser);
 
 userRouter.get(keyUserRouter.getAllUsers, appSecure.verifyToken, usersController.getAllUsers);
 
-userRouter.delete(keyUserRouter.deleteOneUser, checkSchema(userValidator.deleteOneUser), appSecure.verifyToken, usersController.deleteOneUser);
+userRouter.delete(keyUserRouter.deleteOneUser, appSecure.verifyToken, checkSchema(userValidator.deleteOneUser), usersController.deleteOneUser);
 
-userRouter.put(keyUserRouter.editeUserInfo, checkSchema(userValidator.editeUser), appSecure.verifyToken, usersController.editeUserInfo);
+userRouter.put(keyUserRouter.editeUserInfo, appSecure.authLimter, appSecure.verifyToken, checkSchema(userValidator.editeUser), usersController.editeUserInfo);
 
 export default userRouter;

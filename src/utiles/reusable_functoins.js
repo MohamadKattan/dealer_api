@@ -1,4 +1,13 @@
-import { validationResult } from 'express-validator';
+import { validationResult, matchedData } from 'express-validator';
+
+const ALLOWED_PERMISSONS = new Set(['admin', 'manger']);
+
+
+const LevelOfPer = {
+    high: 1,
+    middel: 2,
+    normal: 3
+};
 
 const tK = {
     typeSuccess: 'success',
@@ -21,7 +30,16 @@ const tK = {
     kInviledToken: 'inviledToken',
     kNoTokenP: 'noToken',
     kDeleteOnUser: "deleteOnUser",
-    kEditeUserInfo: "editeUserInfo"
+    kEditeUserInfo: "editeUserInfo",
+    kauthLimt: "authLimt",
+    errGetWhouse: "errGetWhouse",
+    getWhouse: "getWhouse",
+    errCreateWhouse: "errCreateWhouse",
+    createWhouse: "createWhouse",
+    errEditeWhouse: "errEditeWhouse",
+    editeWhouse: "edietWhouse",
+    errDeleteWhouse: "errDeleteWhouse",
+    delWhouse: "delWhouse"
 };
 
 // Reusable body 
@@ -35,29 +53,35 @@ const resBody = {
         getUsers: { statusCode: 200, status: "success", msg: "Get  all users data Successful" },
         deleteOnUser: { statusCode: 200, status: "success", msg: "Delete one user Successful" },
         editeUserInfo: { statusCode: 200, status: "success", msg: "Edite user info Successful" },
+        getWhouse: { statusCode: 200, status: "success", msg: "get wareHouses Successful" },
+        createWhouse: { statusCode: 200, status: "success", msg: "create new wareHouses Successful" },
+        edietWhouse: { statusCode: 200, status: "success", msg: "Edite  wareHouses Successful" },
+        delWhouse: { statusCode: 200, status: "success", msg: "delete  wareHouses Successful" }
     },
     errors: {
         validation: { statusCode: 400, status: "fail", msg: "Validation failed" },
         authFail: { statusCode: 401, status: "fail", msg: "Authentication failed" },
         errorSignUp: { statusCode: 401, status: "fail", msg: "Error creating new user" },
-        notFound: { statusCode: 404, status: "fail", msg: "User not found" },
+        notFound: { statusCode: 404, status: "fail", msg: "Check user name and passWord and try again" },
         tokenFail: { statusCode: 401, status: "fail", msg: "Error creating new token try again" },
         serverError: { statusCode: 500, status: "fail", msg: "An unexpected error occurred" },
         loginRequired: { statusCode: 401, status: "fail", msg: "Login is required" },
         noAccess: { statusCode: 403, status: "fail", msg: "You do not have access" },
         errorSql: { statusCode: 400, status: "fail", msg: "error in sql" },
-        inviledToken: { statusCode: 401, status: "fail", msg: "Invalid token" },
+        inviledToken: { statusCode: 401, status: "fail", msg: "Invalid token login and try again" },
         kNoTokenP: { statusCode: 403, status: "fail", msg: "No token provided" },
         kSignUp: { statusCode: 401, status: "fail", msg: "Authentication failed" },
         getUsers: { statusCode: 400, status: "fail", msg: "Error to get all users" },
         deleteOnUser: { statusCode: 400, status: "fail", msg: "Error to delete one user" },
-        editeUserInfo: { statusCode: 400, status: "fail", msg: "Error to edite user info" }
+        editeUserInfo: { statusCode: 400, status: "fail", msg: "Error to edite user info" },
+        authLimt: { statusCode: 429, status: "fail", msg: "Too many attempts. Try again in 15 minutes" },
+        errGetWhouse: { statusCode: 404, status: "fail", msg: "error to get wareHouses from DB" },
+        errCreateWhouse: { statusCode: 404, status: "fail", msg: "error while create new warehouse" },
+        errEditeWhouse: { statusCode: 404, status: "fail", msg: "error while edite wareHouses from DB" },
+        errDeleteWhouse: { statusCode: 404, status: "fail", msg: "error while delete wareHouses from DB" },
     }
 };
 
-const sanitizeTableName = (name) => {
-    return name.replace(/[^a-zA-Z0-9_]/g, '');
-}
 
 // Reusable response handler function
 const sendRes = (res, type, key, msg, data = null) => {
@@ -67,21 +91,54 @@ const sendRes = (res, type, key, msg, data = null) => {
     return res.status(responseConfig.statusCode).send(JSON.stringify(response)).end();
 };
 
+const checkPer = async (res, per, level) => {
+    switch (level) {
+        case LevelOfPer.high:
+            if (per !== 'admin') {
+                reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoAccess);
+                return false;
+            };
+            console.log('level is high');
+            return true;
 
-const checkPerType = async (res, per) => {
-    const isAdmin = process.env.PER;
+
+        case LevelOfPer.middel:
+            if (!ALLOWED_PERMISSONS.has(per)) {
+                reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoAccess);
+                return false;
+            };
+            console.log(' levele is middel');
+            return true;
+
+        case LevelOfPer.normal:
+            if (!ALLOWED_PERMISSONS.has(per)) {
+                reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoAccess);
+                return false;
+            };
+            console.log(' levele is normal');
+            return true;
+
+        default:
+            console.log('No level provder');
+            reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kLoginRequired);
+            return false;
+    }
+
+}
+
+const checkHighPer = async (res, per) => {
     if (!per) {
         reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kLoginRequired);
         return false;
     }
 
-    else if (per !== 'admin') {
+    if (per !== 'admin') {
         reusable.sendRes(res, reusable.tK?.typeError, reusable.tK?.kNoAccess);
         return false;
 
-    } else {
-        return true;
     }
+    console.log('per is okay');
+    return true;
 }
 
 const typeIsString = async (name) => {
@@ -99,13 +156,14 @@ const resultValidatData = async (req, res) => {
     if (!resultValidat.isEmpty()) {
         const msg = resultValidat.array()[0]['msg']
         console.error(msg);
-        reusable.sendRes(res, reusable.tK.tterror, reusable.tK.kvalidation, msg);
-        return false;
-    } else {
-        return true;
+        reusable.sendRes(res, reusable.tK.typeError, reusable.tK.kvalidation, msg);
+        return { data: false };
     }
+    console.log('Validat Data is okay');
+    const validdata = matchedData(req);
+    return { data: validdata };
 }
 
-const reusable = { sendRes, checkPerType, resultValidatData, sanitizeTableName, typeIsString, tK };
+const reusable = { sendRes, checkHighPer, resultValidatData, typeIsString, checkPer, tK, LevelOfPer };
 
 export default reusable;
